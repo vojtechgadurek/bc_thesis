@@ -1,0 +1,67 @@
+\chapter{Implementation}
+
+\section{Goals}
+It is important to state our goals and what to optimize regarding software development. We went for performance and the possibility to modify and change code easily. Replacing one hashing function family with a different one should be easy.  
+
+These two often do not come hand in hand, but we were willing to pay with speed and ease of development.
+
+As such, C\# was chosen as the main language of development. This may sound like a weird choice when our priority is speed, as C\# is limited by being Just In Time compiled language. As we show later, dotnet and its features (mainly Roslyn and it being Compiler as Service) actually allowed us to perform great optimizations. 
+
+
+\section{Architecture}
+There are three main independent parts of the project. The first is an implementation of fast hashing functions suited for this project. The second is a fasta file reader, which can read .fasta files. The third part is the SymmetricDifferenceFinder, which finds the symmetric difference of some sets.
+
+
+\section{}
+
+\section{Hashing Functions}
+
+As usual, we first state what requirements we want from the implementation of hashing functions. We are looking for the implementation of hashing functions $f: long \rightarrow ulong$, which works reasonably well with our algorithms for finding symmetric differences as fast as possible and is maintainable. Also we are not looking for one hashing function, we would like to get at least three.
+
+The simplest solution to this problem is to use some existing library. These exist, but they do not offer hashing functions from ulong to ulong and mostly work on byte arrays; as such, these implementations are slow and not feasible for our project.
+
+We were forced to implement these functions ourselves. This may look like a trivial task, but actuallu is not. The simplest solution may look something like this:
+\begin{lstlisting}
+public static class HashingFunctions
+{
+	const ulong a = 10;
+	const ulong b = 13;
+	const ulong prime = 31;
+	const ulong size = 16;
+	public static ulong LinearCongruenceHashingFunction(ulong x) 
+            => (a * x + b) % prime % size;
+}
+\end{lstlisting}
+We implemented a hashing function from ulongs to $[size]$. This implementation has one little problem; it is just one. We would like to have at three and maybe more. The solution is to use something like this:
+
+
+
+
+In C\#, we can define lambdas using (param1, param2) => \{\}  notation. 
+CreateLinearCongruenceHashingFunction returns a random hashing function from the Linear Congruence hashing function family. 
+
+This implementation is quite straightforward, but it has problems. The hashing functions created by CreateLinearCongruenceHashingFunction are much slower than the hashing function created by hand. 
+
+There are reasons for that. The main is compiler optimization. Modern compilers do many tricks, including replacing division or modulo with cheaper processor instructions like multiplication, addition, and subtraction. This is exactly what happened here.
+
+This is not the only cost we are paying for using the second aproach, also we have pay for delagates call and also the code cannot inline, which may be quite expensive as our hashing function are going to be small, thus inlining would help.
+
+\section{Memory}
+\subsection{Heap and Stack}
+\subsection{Garbage Collector}
+\subsection{Value and Reference types}
+
+
+
+source
+https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/generics-in-the-run-time
+
+
+
+\subsubsection{Inlining}
+
+
+
+\subsection{Cost of Virtual Methods and delegates}
+
+\subsection{Garbage Collector}

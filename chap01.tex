@@ -1,0 +1,151 @@
+\chapter{Introduction to Streaming Algorithms}
+
+An example citation: \cite{Andel07}
+
+
+
+\section{Memory}
+
+\begin{defn}
+\end{defn}
+
+\begin{thm}
+Let \(f\) be a function whose derivative exists at every point, then \(f\) is a continuous function.
+\end{thm}
+
+\section{Streaming algorithms}
+
+\subsection{The Need for an Alternative to RAM}
+
+In the early days of computing, memory was a significant hurdle. It was both limited and expensive. However, this has changed dramatically. Today, we can store vast amounts of data inexpensively. As a result, people often opt to add more storage rather than spend time deleting unnecessary files.
+
+This environment has led to a massive accumulation of data, sometimes exceeding what our local machines can handle. One example might be some network router trough, which passes large amounts of data. 
+
+Another challenge is limited throughput. Imagine two distant instances of a massive database; it would be ideal to keep them synchronized. However, sending all the data over the network to check if they are the same isn't always feasible due to bandwidth constraints. 
+
+At first look, these two problems do not seem very similar. However, the opposite is true, as we discuss later.
+
+In computer science, Oh notation is often used to describe algorithms' time or space complexity. While this simplification is convenient and helps us to compare algorithms easily, it may lead to wrong conclusions as algorithms with worse Oh complexity may perform better in the real world than algorithms with better Oh complexity.
+
+One reason may be that our theoretical model of computation RAM (Random Access Machine) hides some constants from us. 
+If our only need is to find asymptotic complexity, then hiding constants is not an issue, but in the real world, these hidden costs may cause significant performance problems. For example, random access to memory is much more expensive, than serial read.
+
+Consequently, algorithms with the same time complexity can differ significantly in performance, sometimes by orders of magnitude. For example, IBLT (Invertible Bloom Lookup table) outperforms the naive algorithm for finding the symmetric difference of two large sets by using memory linear to the size of the symmetric difference. In contrast, the naive algorithm requires linear memory to the size of both sets combined.
+
+As such, we would like to have a model that is stricter about memory and how we can use it. The main intuition should be, that we can see every piece of data just once and never again.
+
+\subsection{Data Stream model}
+
+We may imagine the Data Stream as an oracle holding internally some sequence of words, which are inputs to our program. We may ask the oracle to provide us with the next item in the sequence. This is the only way to access the input data, and there is no way back. So if we get the \(k\)-th item from the sequence, there is no way to see the \((k-i)\)-th item again for some natural \(i\). More formally:
+
+\begin{defn}
+Data Stream is tuple $(A, i, Access, IncreaseCounterByte)$. Where is $A$ is a sequence of unknown length \(N\) of finite words from universe $U$ over finite language $L$. $i$ is counter, which may only increase in value. $Access()$ returns value of $A_i$. (\(IncreaseCounterByOne()\) increases value of $i$ by one.
+\end{defn}
+
+This may not seem to be limiting as we might create a large array and copy elements from the Data Stream to it and then continue with normal computation as in RAM. This leads us to the second limitation, limiting memory usage.
+
+We would like to have a memory bound. When designing algorithms, we will go for algorithms with polylogarithmic space complexity over the size of the universe and the number of items in the Data Stream.
+
+\begin{defn}
+    Polylogarithmic space complexity is defined as: 
+    \[ \LogDSpace(n):=  \bigcup_{c=0}^{\infty}\O(\log(n)^c) \]
+\end{defn}
+
+
+The last difference from RAM is that we will count every bit used and not just the memory of numbers stored. Thus, if we want to uniquely describe some element from the universe of size \(M\), it is going to cost us at least \(\O(\log(M))\) bits of memory.
+
+We call the class of algorithms using Data Streams as their input Streaming Algorithms, which are also from $\LogDSpace$.
+
+\subsection{Use cases for Streaming Algorithms}
+
+At first glance, it is unclear how strong Streaming Algorithms are and for what purposes they may be used. In this section, we give some examples of such problems and Streaming Algorithms that solve them: 
+
+\subsubsection{Counting}
+As humans, we are often used to count on our fingers. The basic strategy of raising one finger for every increase leads to the highest count of 10. This may be significantly improved by using fingers as bits and counting in binary. Now, we can get at most $2^{10} - 1$. Is there any upper bound on the maximum?
+One should see that for describing $2^{10}$ states, we need at least $10$ bits.
+If we decided to count only even numbers, we could go higher. This has one little problem, it is not clear how to add one to our count. The solution is to abandon the deterministic algorithm and go for a probabilistic one.  
+
+\begin{lstlisting}
+Update c : N -> N
+    let x = uniform pick from [0,1]
+    x > 0.5 -> c + 1
+    x <= 0.5 -> c
+\end{lstlisting}
+
+\begin{lstlisting}
+Query c : N -> N
+    -> c * 2
+\end{lstlisting}
+
+We can use \textit{Update} when we want to increase the count by one. It is not hard to see that the expected value is the same as the true value. What is not clear, what is the true behaviour of the algorithm and whether its answers are close enough to true count. Error should be close to 
+
+\subsubsection{Shufling}
+
+\subsection{HyperLog}
+
+
+\section{Statement of the Problem}
+
+We will return to the example from the introduction. Imagine we have two instances of one database, and we would like to find if they differ, and if they do, then make corrections so they become the same. Also, we would like to exchange as little data between the instances as possible.
+
+We can model this problem by having two large sets \(A\), \(B\) such that their symmetric difference is slight (the symmetric difference of \(A\), \(B\) contains elements that are just in one of the sets). The elements of \(A\) and \(B\) are given to us as a Data Stream, first we get elements from \(A\), then from \(B\).
+
+\begin{defn}
+    \(k\)-Problem of sets \(A\) and \(B\) is the problem of finding the symmetric difference of \(A\), \(B\) of size at most \(k\), where elements of \(A\) and \(B\) are provided to us using a data stream, first giving elements of \(A\), then sending a dividing symbol, and then sending all elements of \(B\). If not said otherwise, we would use \(N\) for the number of elements in both sets and \(M\) for the universe size from which items of the Data Stream are taken.
+\end{defn}
+
+We would expect that elements of both sets have some unique binary representation. If we talk about some arithmetic operations over these elements, we are actually doing these operations over their binary representations.
+
+One may imagine that sets contain just integers that are then mapped to the actual elements.
+
+We can solve any \(k\)-Problem in \(\O(n)\) space and time, where \(n\) is the number of elements in the Data Stream. We will build a HashSet, adding all elements from \(A\) and then removing all elements from \(B\). This solves our problem, but our space complexity is much larger than \(\LogDSpace\). Actually, the best-known algorithm has \(\O(k)\) complexity, where \(k\) is the size of the symmetric difference.
+
+\section{From Simple solutions to IBLT's}
+
+It's not easy to see how to proceed to get an algorithm better than the naive version. In this chapter, we will try to build Invertible Bloom Lookup Tables that solve the problem of the aforementioned space complexity. The first question should be how?
+
+\subsection{Solving 1-Problem}
+
+Let's start by simplifying the problem. We would limit the size of the symmetric difference to size 1.
+
+We encourage the readers to try to solve the following lemma by themselves.
+
+\begin{lemma}
+\(1\)-The problem of two sets \(A\), \(B\) is solvable by a Streaming Algorithm, and we will call this algorithm.
+\end{lemma}
+
+The construction is quite simple; we will remember two numbers \(C\) and \(S\):
+
+\[ C := |A| - |B| \]
+\[ S := \sum_{i\in A} i - \sum_{i\in B} i \]
+
+It is trivial to see that there exists a Streaming Algorithm returning values \(C\) and \(S\) for any sets \(A\) and \(B\).
+
+If \(C\) is \(1\), then the symmetric difference is \(\{S\}\). If \(C\) is \(-1\), then the symmetric difference is \(\{-S\}\), if \(C = 0\), then the symmetric difference is empty.
+
+It should be clear that \(C\) may be just \(-1\), \(0\), or \(1\).
+
+This algorithm may not be the best in terms of memory efficiency, as with \(S\), \(C\) may consume \(\O(\log(N) + \log(M))\) memory, but this may be improved to \(\O(\log(M))\). We leave this as an exercise to the reader. Hint: Can \(C\) be from a finite field?
+
+We are going to reuse this algorithm in the next section; thus, it would be nice to give it a name.
+
+\begin{defn}
+    SumOneFinder is a Streaming Algorithm solving \(1\)-Problem using sum and counter. 
+\end{defn}
+
+\subsection{From 1-Problem to General Solution}
+
+Again, it may not be clear how to generalize a SumOneFinder to solve \(k\)-Problem. Experimentation is often a good idea if we do not know how to continue. So, we will take SumOneFinder and apply it to \(2\)-Problem. For simplicity, we assume that the size of the symmetric difference is exactly \(2\) and is equal to \(\{j,l\}\), then \(C=\pm 1 \pm 1\) and \(S = \pm j \pm l\). If we knew the value of \(j\) and to which set it belongs, we could easily find the value of \(l\). 
+
+Let's say we would be able to mark half of the elements from \(A\cup B\), then the probability of both \(j\), \(l\) being both marked or both being unmarked is \(\frac{1}{2}\). Then we may run \(SumOneFinder\) for marked elements and unmarked elements, then with probability \(\frac{1}{2}\) we will be able to find the symmetric difference. We are also able to determine if we failed. For clarity; let \(C_O\) be \(C\) of SumOneFinder for marked elements and \(C_1\) for unmarked elements. We may see that if \(C_i = \pm 1\), then \(\pm S_i\) is some element in the symmetric difference of \(A\) and \(B\).
+
+One can see that we may get a Las Vegas algorithm for any \(k\) and \(e\), where \(k\) is the size of the symmetric difference and \(e\) is the probability that our algorithm fails, by running some amount of instances of SumOneFinder. There are two problems with that algorithm. The first is that it is unclear how to mark the items of the Data Stream. We will show a fix for that. The second is much worse and would require us to make changes to the algorithm. The problem is that the probability that just an item is marked or unmarked lowers exponentially with the value of \(k\), which means we need to have exponentially more instances of SumOneFinder.
+
+We first solve the first problem.
+
+\subsection{Marking Elements via Hashing}
+
+If one is familiar with the concept of hashing, this section does not provide anything new. We expect that such readers should see how hashing can be utilized to provide such marking. 
+
+
+\section{}

@@ -1,0 +1,167 @@
+\chapter{FlashHash}
+\section{Motivation}
+The project required access to families of fast hashing functions. Sadly, no libraries were offering such. The base C\# library provides only cryptographic hashing functions. Other libraries offered hashing only from byte arrays. This meant we had to convert integer values to byte arrays, which caused performance bottlenecks. This led to the decision to implement, such a library ourselves.
+
+We would like the library to provide fast hashing functions from long to long for some hashing families.
+
+\section{How to use}
+FlashHash implements two hashing function families - Linear Congruence and Multiply Shift.It isIHashingFunctionFamily
+There are two important concepts to understand:(Hashing Function) Schemes and (Hashing Function) Families. 
+\subsubsection{Schemes}
+Schemes describe one hashing function. One may build a hashing function out of it:
+\begin{lstlisting}
+var scheme = new LinearCongruenceScheme(10, 5, 7)
+// This scheme yields the following hashing function:
+//  (10*x + 5) % Prime % 7
+// Prime represents the closest Mersene prime 
+//greater than the size (7)
+
+Expression<Func<ulong, ulong>> expression = scheme.Create()
+// Building an expression tree is not computationally expensive
+
+Func<ulong, ulong> hashingFunction = expression.Compile();
+// However, compilation is resource-intensive
+\end{lstlisting}
+
+\subsubsection{Families}
+Families are merely factories of schemes:
+\begin{lstlisting}
+var family = new LinearCongruenceFamily();
+family.SetRandomness(new Random(42));
+// Custom randomness can be set
+ulong size = 10;
+Func<ulong, ulong> hashingFunction = 
+    family.GetScheme(size).Create().Compile()
+// Retrieves a random hashing function 
+//from the linear congruence family
+\end{lstlisting}
+
+
+
+\section{Implementation}
+\section{Simplest Solution}
+There is very simple solution:
+\begin{lstlisting}
+var CreateLinearCongruenceHashingFunction = 
+    (long size) =>
+    {
+        ulong a = Random.GetRandomUInt64();
+        ulong b = Random.GetRandomUInt64();
+        ulong p = Random.GetGoodPrime(size);
+        return (ulong x) => (a * x + b) % size % prime;
+    }
+\end{lstlisting}
+This approach has one very large advantage: it is simple. On the other hand, we pay for this simplicity by performance, as constant optimization and inlining are not possible. One can easily see that linear congruence uses modulo operators. These are quite expensive, and even more so if they are not constant optimized. This implementation is circa $2-4$ times slower, depending on processor, than when a,b, size, and prime were known in advance.
+
+There are two possible solutions to this in C\#: Expression Trees and Runtime Types with Struct Delegates. We talked about these in [number] chapter. We chose a solution via expression trees, but to interested readers, we first describe the solution by Runtime Types with Struct Delegates. 
+
+\subsection{Possible solution via Runtime Types with Struct Delegates}
+First, we have this implementation:
+\begin{lstlisting}
+//For sharplab
+using SharpLab.Runtime; 
+
+interface IConstant{
+    ulong Get();
+}
+
+//Constants are going to look something like this
+struct One : IConstant
+{
+    public ulong Get() => 1L; 
+}
+
+struct Six : IConstant
+{
+    public ulong Get() => 6; 
+}
+
+struct Prime : IConstant
+{
+    public ulong Get() => 11; 
+}
+//This is just for sharplab
+[JitGeneric(typeof(One), typeof(Six), typeof(Prime),typeof(Six)) ]
+struct HashingFunction<TA, TB, TSIZE, TPRIME> 
+where TA : struct, IConstant
+where TB : struct, IConstant
+where TSIZE :  struct, IConstant
+where TPRIME : struct, IConstant
+{
+    public HashingFunction(){}
+    
+    readonly TA a = default(TA);
+    readonly TB b = default(TB);
+    readonly TSIZE size = default(TSIZE);
+    readonly TPRIME prime = default(TPRIME);
+    public ulong Invoke(ulong value) 
+        => 
+    (a.Get() * value + b.Get())% prime.Get() %size.Get();
+} 
+
+// Then hf.Invoke = (x) => (1*x + 6) %  11 % 6;
+// But compiler knows this during compilation
+\end{lstlisting}
+This works. There is one small problem: We need access to families of hashing functions, but we cannot implement a constant type for every number. The solution to this is IL code and runtime types. It is possible in C\# to create types during runtime, and then we may use reflection to build hashing functions out of the created constant. Implementation of the Linear Congruence family would thus look like this:
+
+\begin{lstlisting}
+static class ConstantFactory(){
+    Type GetConstant(ulong value){
+    //Magic
+    }
+}
+
+class LinearCongruenceFamily {
+    IHashingFunction GetHashingFunction(size){
+        //Prepare
+        ulong a = Random.GetRandomUInt64();
+        ulong b = Random.GetRandomUInt64();
+        ulong prime = GetGoodPrime(size);
+        Type A = ConstantFactory.Get(a);
+        Type B = ConstantFactory.Get(b);
+        Type PRIME = ConstantFactory.Get(prime);
+        Type SIZE = ConstantFactory.Get(SIZE);
+        //Reflection
+        var maker = typeof(LinearCongruence<>).MakeGenericType(
+            new {A,B, PRIME, SIZE}
+        );
+        return (IHashingFunction) Activator.CreateInstance(maker);
+    }
+}
+\end{lstlisting}
+
+Implementing ConstantFactory is not that hard, but we omit it. We reference interested reader to check System.Reflection.Emit.
+
+\subsection{Solution using Expression Trees (LittleSharp)}
+We are going to use LittleSharp for work with expression trees. Reasons for developing this library are given in the chapter about LittleSharp.
+
+Using LittleSharp the simplest solution looks like this:
+\begin{lstlisting}
+var CreateLinearCongruenceHashingFunction = 
+    (long size) =>
+    {
+        ulong a = Random.GetRandomUInt64();
+        ulong b = Random.GetRandomUInt64();
+        ulong p = Random.GetGoodPrime(size);
+        var f = CompiledFunctions.Create<ulong, ulong>
+        (out var input_, out var hash_);
+        f.S.Assign(f.Output, (a * input_ + b) % size % prime);
+        return f.Construct().Compile();
+    }
+    //Returns Func<ulong, ulong>
+    //This code is constant optimized
+\end{lstlisting}
+
+\subsection{Comparing aproaches}
+Both approaches add significant complexity to the project. The main issue is that switching the context between runtime-generated and normal code is not smooth. One needs to use reflection calls in case of IL-generated code or delegates calls for Expression Trees. 
+Also, using runtime-generated code will cause type safety issues. This is because types cannot be checked before the code is generated, which happens during runtime. This may cause many hard-to-find bugs that may cause runtime errors.
+
+Both approaches are comparable. They both lead to constant optimized code and both them allows inlining with some addtional work. Expression Trees are easier to work with because their API is simpler, and they require much less reflection code. Some type of safety can also be added; this is discussed in the chapter LittleSharp. Finally, expression trees are probably used more by the community. This means there are more sources to learn about them.
+Taking this all into account, we have chosen the approach using Expression Trees.
+
+\section{Peformance}
+
+TODO Performance
+
+
+

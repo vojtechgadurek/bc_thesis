@@ -1,0 +1,61 @@
+\chapter{RedaFasta}
+\section{Motivation}
+Our goal is to write a reader of FASTA files that does not cause bottlenecks to our main algorithm. As such, it needs to be reasonably fast. We are willing to sacrifice genericity for performance. 
+\section{How to use}
+The library provides two classes, FastaFile and FastaFileReader. FastaFile serves to initialize and recover configurations from FASTA files. FastaFileReader is the main class doing all reading, buffering, and parsing kmers.
+
+\subsubsection{Canonical Order}
+ToDO
+
+\subsubsection{Opening a FastaFileReader}
+The first line of the fasta file is expected to be a configuration. There must be two parameters
+l and k. l is the number of, chars in sequence, and k is the number of chars in a kmer.
+then it is expected to be a line with all chars in sequence. The sequence should contain only A,C,G,T or a, c, t, g. The reader does not check this; different symbols may be treated as any char. A reader reads only l characters from the line.
+
+\begin{lstlisting}
+//Open fasta file
+string path = "file.fasta"
+//Open TextReader
+TextReader tr = new StringReader(path);
+//Get configuration
+var config = FastaFile.Open(tr);
+//Open reader
+var fastaReader = 
+    new FastaFileReader(
+        config.KMerSize, 
+        config.nCharsInFile, 
+        tr
+    );
+\end{lstlisting}
+Users may use FastaFileReader in two ways: using its own buffer or borrowing and then returning a buffer. Both methods have advantages and disadvantages. It is not recommended to mix both methods, as this may lead to highly underfilled buffers. FastaFileReader does not guarantee that KMer is read in order.
+\subsubsection{Using own buffer}
+This method always tries to fill the buffer as much as possible. This may be beneficial if we need more consistent counts of numbers in the buffer. This is, however, at the cost of an additional copy, causing it to be less performant, than borrowing
+\begin{lstlisting}
+FastaFileReader fastaReader;
+//We may use our own buffer and let it fill
+var buffer = new ulong[1024];
+int nKMerInBuffer = fastaReader.FillBuffer(buffer);
+//0 means there is no KMer to be read and the stream ended
+\end{lstlisting}
+\subsubsection{Borrowing a buffer}
+This buffer returns some buffer. Buffer has three fields: Data, Size, and Used. Size the number of KMer in the buffer; Used is the number of KMer already used. This means when Used has value N, the Data[N] is the first valid value. Used should be 0, but using the method FillBuffer() may cause some buffers to have Used fields with different values
+
+\begin{lstlisting}
+FastaFileReader fastaReader;
+//We may borrow a buffer from the reader 
+var borrowedBuffer = fastaReader.Borrow();
+//We then should return the buffer back to the fasta reader
+//If do not return a buffer,
+//fasta file reader may be forced to allocate a new one.
+//This may cause performance issues.
+if (borrowedBuffer is not null) 
+    fastaReader.Recycle(borrowedBuffer);
+\end{lstlisting}
+\subsection{Disposing}
+FastaFileReader does not dispose of the TextReader it was provided with. The user should do this themselves by calling the Dispose() method.
+
+\subsection{Implementation}
+
+
+
+    
