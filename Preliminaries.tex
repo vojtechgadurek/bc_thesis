@@ -72,16 +72,18 @@ Then continue with degree:
 Sometimes, we would like to have only the same size edges. This concept is called $k$-uniformity.
 \begin{defn}
     Let \(G:= (V, E)\) be than a hypergraph, than $G$ is $k$-uniform, if $\forall e \in E : |e| = k$.
+    Then, we define degree in hypergraph
 \end{defn}
 
-Then, we define degree in hypergraph
 \begin{defn}
     Let \(G:= (V, E)\) be than a hypergraph, and be $v$ some vertice from $V$ than $\Delta(v) = |{e \in E; v\in e }|$. We call this property degree of vertice.
 \end{defn}
 
 
 \subsection{Paring in Bipartite Graphs and Hypergraphs}
-Imagine being a kindergarten teacher. Your goal is to ensure that children have enough toys to play with. There are a few problems with that. Children are quite picky, and everyone is willing to play with exactly 3 toys. Children do not understand that sharing is caring. Thus, every child needs at least one toy with which they are willing to play. Children pick toys they are willing to play with randomly, but you assign the toys to the children. Lastly, you are limited in budget, and the fewer toys you buy, the better.
+Imagine being a kindergarten teacher. Your goal is to ensure that children have enough toys to play with. 
+There are a few problems with that. Children are quite picky, and everyone is willing to play with exactly 3 toys.
+ Children do not understand that sharing is caring. Thus, every child needs at least one toy with which they are willing to play. Children pick toys they are willing to play with randomly, but you assign the toys to the children. Lastly, you are limited in budget, and the fewer toys you buy, the better.
 
 We can translate this problem to hypergraphs. Toys are vertices, and children's possible choices of toys are edges. We now name this hypergraph $G$ and let $G = (V, E)$. This hypergraph is actually $3$-universal. Now we define a new term:
 \begin{defn}
@@ -99,6 +101,8 @@ This gives a solution to our problem. This result shows that we need at least a 
 The first time one meets with hashing functions is when faced with the need for a data structure with an \(O(1)\) time cost for insert and get by key. Suppose the keys are from \([n]\), where the number of inserts \(O(n)\), then the solution is simple. We can create an array of length \(n\) and index into it. 
 
 This solution, however, depends on the size of the universe. If the universe $U$ has a size of $M$, then we need to use a table of size $M$. This may and often is not feasible. For example, there are $2^{32}$ 32-bit integers. The main solution to this problem is to have some "good" hashing function $f:U \rightarrow [n]$, where $n$ is some desired table size. What means "good"? When we insert some item $a$ with key $k$ in the table, we insert at $f(k)$ index. When there is already value in the table, we get a hashing conflict. There are many possible solutions how to solve this. The simplest solution is to keep more values in the same field.
+
+
 
 \subsection{Hashing Function Families}
 By "good," we mean that it minimizes hashing conflicts. There are a few properties that may be useful in determining such "goodness." Before we look at them, we need to address one problem. If we choose a hashing function deterministically, the enemy may choose data hashing with very few values. We may prevent this by picking a hashing function randomly from some hashing function family.
@@ -119,16 +123,20 @@ A family \( F \) of hashing functions from \( X \rightarrow Y \), where \( |Y| =
 \end{defn}
 \subsection{Examples of Hashing Function Families}
 
-\subsubsection{Linear Congruence}
-The image you sent me contains a definition in mathematics, not the definition of the word “family”.  
+\subsubsection{Linear Congurence}
+One of the simplest hashing functions is a linear congruence. This function is defined as:
+\begin{defn}
+    Let \( p \) be a prime number, \(n\)  be from $\mathbf{N}$,  \( a \) a number from \([n-1]\), and \( b \) a number from \([p]\). Then the hashing function is defined as:
+    \[ f_{a,b}(x) = (ax + b) \% n \% p\]
 
-Here is the definition rewritten in LaTeX:
-
-$$Definition: For any w (word length of the machine) and l (width of the result), we define the multiply-shift family M = \{h_a \mid a \in [2^{l}], a \text{ odd}\}$$
-from [2] to [2]^{w}, where 
-$$h_a(x) = (ax)(w-l: w).$$
-
-Claim: The family M is 2-universal.
+    Let $H_p^n$ be set of all such functions with prime $p$ and size $n$ , than we $H_p^n$ a linear congruence family.
+\end{defn}
  
+Linear congruence family is useful also in practice. Dictionaries in C\# are actually implemented using a linear congurence family. The main advantage of this family is that, if we choose the size of the universe we are hashing to, than we get a function from a linear congruence family practically for free.
 
 \subsubsection{Multiply Shift}
+
+\begin{defn}
+    Linear Congruence Family is 
+
+\end{defn}
