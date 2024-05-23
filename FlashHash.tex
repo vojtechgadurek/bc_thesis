@@ -14,7 +14,7 @@ var scheme = new LinearCongruenceScheme(10, 5, 7)
 // This scheme yields the following hashing function:
 //  (10*x + 5) % Prime % 7
 // Prime represents the closest Mersene prime 
-//greater than the size (7)
+	//greater than the size (7)
 
 Expression<Func<ulong, ulong>> expression = scheme.Create()
 // Building an expression tree is not computationally expensive
@@ -161,7 +161,6 @@ Taking this all into account, we have chosen the approach using Expression Trees
 
 \section{Peformance}
 
-TODO Performance
-
+ToDo 
 
 
