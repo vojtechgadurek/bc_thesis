@@ -1,4 +1,36 @@
 \chapter*{Introduction}
 \addcontentsline{toc}{chapter}{Introduction}
 
-With the never ending growth of data, there is a need for finding algorithms for qu
+Advances in technology in the last decade led to huge accumulation of data. 
+This have created need for algorithms able to work with large data in small memory. 
+In our work we focus on the problem of finding the symmetric difference of two large sets, 
+than differs only in a small number of elements. 
+
+\section*{Algorithms}
+
+The state of art to solution to such problem is 
+to use a Invertible Bloom Lookup Table (IBLT). This data structure is very close to a hashtable.
+It differs mainly in the way how it deals with collisions. It just adds the values of the colliding keys and keeps the count of keys in each bucket.
+This means when some item is added to the IBLT and then removed, the IBLT will be same as IBLT where these two operations were not performed.
+This property is very useful in our case, because we can add all elements from the first set to the IBLT and then remove all elements from the second set. An only items 
+in the difference had influence on the IBLT. We than may try to recover the difference from the IBLT, returning all values in buckets where only one key was hashed.
+There comes another crucial difference. IBLT is that we do not use one hash function but $k$. So, each key is stored in $k$ buckets. 
+Improving a probability a no two keys are hashed into same buckets.
+We may use such structure for finding the symmetric difference of two sets in linear space to the size of the difference.
+The authors NAME build up on the IBLT and proposed a new data structure improving the space consumed by a constant. 
+Their improvement lies in replacing summation of values in the buckets with a XOR operation and not keeping the count of keys in the buckets.
+This may lead to recovery of keys not in the difference, but the authors successfully showed such event does not happen with high probability.
+
+Both structures success depend heavily on the probability of existence of $k$-cores in random $k$-uniform hypergraphs depending on ratio number of edges and vertices. This comes from the fact, we may look on buckets as vertices 
+and hashes of keys as edges. The ratio number of vertices to number of edges for which no $2$-core exists
+ in random $k$-uniform hypergraph with high probability is know for any $k$ and the highest possible is $1$:$0.8$ for $k = 3$.
+However, improvements may be gained by on non uniform hypergraphs as shown in the work WORK.
+
+
+We implemented the IBLT and compared with a improved version of such algorithm by the authors NAMES. We tested the algorithms for different familes of hash function.
+As we expected the common usecase of our implementation is 
+
+
+Finding symmetric difference of two sets may have many applications from keeping instances of distributed databases in sync to comparing closely related genomes.
+
+
