@@ -39,7 +39,7 @@ Func<ulong, ulong> hashingFunction =
 
 
 \section{Implementation}
-\section{Simplest Solution}
+\subsection{Simplest Solution}
 There is very simple solution:
 \begin{lstlisting}
 var CreateLinearCongruenceHashingFunction = 
@@ -130,7 +130,45 @@ class LinearCongruenceFamily {
 }
 \end{lstlisting}
 
-Implementing ConstantFactory is not that hard, but we omit it. We reference interested reader to check System.Reflection.Emit.
+\subsubsection{Constant Factory}
+The implementation of such library function may look something like this:
+\begin{lstlisting}
+public static Type CreateRuntimeConstant(long value)
+{
+    //Assembly to which we add the type
+    AssemblyName assemblyName = new AssemblyName("DynamicAssembly");
+    AssemblyBuilder assemblyBuilder =
+        AssemblyBuilder.DefineDynamicAssembly(assemblyName, AssemblyBuilderAccess.Run);
+    ModuleBuilder moduleBuilder =
+        assemblyBuilder.DefineDynamicModule("DynamicModule");
+
+    //Type builder with struct semantics
+    TypeBuilder tb = 
+        moduleBuilder.DefineType(
+            $"long_{value}",
+            TypeAttributes.Public | TypeAttributes.Sealed | 
+            TypeAttributes.SequentialLayout 
+            | TypeAttributes.BeforeFieldInit,
+            typeof(ValueType),
+            new Type[] { typeof(IConstant) }
+        );
+    
+    var method = tb.DefineMethod("GetValue", 
+    MethodAttributes.Public | 
+    MethodAttributes.Virtual | 
+    MethodAttributes.HideBySig, typeof(long), Type.EmptyTypes);
+    var il = method.GetILGenerator();
+    il.Emit(OpCodes.Ldc_I8, value);
+    il.Emit(OpCodes.Ret);
+    tb.DefineMethodOverride(
+        method,
+        typeof(IConstant).GetMethod("GetValue")
+        );
+    return tb.CreateType();
+} 
+\end{lstlisting}
+
+
 
 \subsection{Solution using Expression Trees (LittleSharp)}
 We are going to use LittleSharp for work with expression trees. Reasons for developing this library are given in the chapter about LittleSharp.
@@ -163,4 +201,7 @@ Taking this all into account, we have chosen the approach using Expression Trees
 
 ToDo 
 
+\section{Future work}
+We see the library as very complete, but it could provide more hashing functions families. It could also posibly  provide a possibilty to hash from any integer type to any integer type. This would be actually very simple to implement.
+Some sort of cashing for compiled expression tree hashing function could be useful.
 

@@ -13,12 +13,10 @@ In simplicity, this theorem says that only $\frac{1}{k}$ people can be $k$-times
 
 One can, with little work, get a Chebichev Inequality from Markov Inequality.
 \begin{thm}
-    (\textbf{Chebyshev inequality})  Given a nonnegative random variable $X$ with expectation $$Pr[X-E[X] > kVar[X]] \leq \frac{1}{k^2}$$
+(\textbf{Chebyshev inequality})  Given a nonnegative random variable $X$ with expectation $$Pr[|X-E[X]| > kVar \leq \frac{Var[X]}{k^2}$$
 \end{thm}
 
 Both previous theorems work for all random variables. We may get a better bound by requiring more from the random variables. We will require that they be independent and have a Bernoulli distribution.
-
-TODO cite ssbd
 
 \begin{thm}
     (\textbf{Multiplicative Chernoff bound})  Given independant Bernoulli random variable $X_1, X_2 \dots X_n$ such that $X = \sum_{n=1}^nX$ and $E[X] = \mu$, then for $0 \leq \beta \leq 1$ 
@@ -34,19 +32,20 @@ The number $\frac{1}{3}$ may seem arbitary. It is. We will show that any algorit
 
 \subsubsection{Median Trick}
 
-TODO CITE Complexity modern aproach
 Let's say we have some randomized algorithm $A$ with a probability of success $p$. Now we run $k$ instances of $A$. We then pick a median of all results. This approach fails when the median instance is a failure. This happens only if more than $\frac{k}{2}$ instances were failures. 
 
-We can now use Multiplicative Chernoff bound to get determine, how many instances of $A$ we have to run to get some desired success rate of $p'$. We set $X$ as the number of successful instances. We need $(1-\beta)\mu$ to equal $\frac{n}{2}$. 
+We can now use Multiplicative Chernoff bound to determine how many instances of $A$ we have to run to get some desired success rate of $p'$. We set $X$ as the number of successful instances. We need $(1-\beta)\mu$ to equal $\frac{n}{2}$. 
 
 $$(1-\beta)\mu = (1-\beta)np = \frac{n}{2}$$. 
 $$\beta = \frac{2p + 1}{2p}$$
 
 
 Then we get: $$Pr[X \leq \frac{n}{2}] \leq \exp \left( \frac{-(2p+1)pn}{2} \right) = 1 - p'$$
-This means, that probability of failure lowers exponentially with number of instances run. So, when we want a error rate $\delta$, than we need to run $\O(\log(\frac{1}{\delta}))$ instances.
+This means that the probability of failure lowers exponentially with the number of instances run. So, when we want a error rate $\delta$, than we need to run $\O(\log(\frac{1}{\delta}))$ instances.
 
 This is a very useful trick as it allows us to strive for randomized algorithms with low success rates and we are punished just by logarithmic slowdown.
+
+Some algorithms have a better probability of succeeding and the larger the data they work on are.  If we can prove that the limit in the infinity of such probability is one, we say that the algorithm succeeds with high probability. An abbreviation "whp" is often used.
 
 \section{Hypergraphs}
 A graph is a tuple of two sets. One set contains vertices and one edges. Normally, edges may connect only two vertices. Formally edges are sets containing exactly two vertices, but what if we allowed edges to contain any number of vertices? 
@@ -80,7 +79,7 @@ Sometimes, we would like to have only the same size edges. This concept is calle
 \end{defn}
 
 
-\subsection{Paring in Bipartite Graphs and Hypergraphs}
+\subsection{Paring in Random Hypergraphs}
 Imagine being a kindergarten teacher. Your goal is to ensure that children have enough toys to play with. 
 There are a few problems with that. Children are quite picky, and everyone is willing to play with exactly 3 toys.
  Children do not understand that sharing is caring. Thus, every child needs at least one toy with which they are willing to play. Children pick toys they are willing to play with randomly, but you assign the toys to the children. Lastly, you are limited in budget, and the fewer toys you buy, the better.
@@ -91,17 +90,34 @@ We can translate this problem to hypergraphs. Toys are vertices, and children's 
 \end{defn}
 One should see that if $G$ contains a $2$-core hypergraph, pairing is not possible. The other way is to get it from Hall's Theorem. It may not be clear what exactly means, "Children pick toys they are willing to play with randomly." By randomly, we mean they uniformly choose from the set of subsets of $V$ with size $3$.
 
-We now may call a result from [https://arxiv.org/pdf/1101.2245]. This says that random 3-uniform hypergraphs with $n$ vertices a and $m$ edges do not contain a $2$-core with high probability if $\frac{n}{m} \geq 1.222$. 
+We now may call a result from [https://arxiv.org/pdf/1101.2245]. This says that random 3-uniform hypergraphs with $n$ vertices a and $m$ edges do not contain a $2$-core with high probability if $\frac{n}{m} \geq 1.222\dots$. This solution is tight, thus when the ratio is less than $1.222\dots$, than $2$-core is found with high probabilty.
 
-This gives a solution to our problem. This result shows that we need at least a $1$ toy for each kid.
+This gives a solution to our problem. This result shows we need at least a $1.22$ toy for each kid.
+This, however, does help us as it is unclear whether we can find such a pairing quickly. There is a simple hungry algorithm:
+
+\begin{lstlisting}
+Step G : (V,E) -> (V,E)
+    G = (V,E)
+    ToBeRemoved <- { e in E; 
+            (exists v in  e) (degree of v is 1)
+            }
+    return (V, E - ToBeRemoved)
+
+Run G : (V,E) -> False or True
+    G = (V,E)
+    (V, New ) <- Step G 
+    E = New return False
+    E = {} return True
+    return Run (V,New)
+\end{lstlisting}
+Hungry algorithms have a bad tendency not to work. However, it works for this problem. If some vertices lie in only one edge, we can pair these two together and remove such edges. If there exists none such vertice, then we found $2-core$.
 
 \section{Hashing}
 
 \subsection{Problem of Dictionary}
 The first time one meets with hashing functions is when faced with the need for a data structure with an \(O(1)\) time cost for insert and get by key. Suppose the keys are from \([n]\), where the number of inserts \(O(n)\), then the solution is simple. We can create an array of length \(n\) and index into it. 
 
-This solution, however, depends on the size of the universe. If the universe $U$ has a size of $M$, then we need to use a table of size $M$. This may and often is not feasible. For example, there are $2^{32}$ 32-bit integers. The main solution to this problem is to have some "good" hashing function $f:U \rightarrow [n]$, where $n$ is some desired table size. What means "good"? When we insert some item $a$ with key $k$ in the table, we insert at $f(k)$ index. When there is already value in the table, we get a hashing conflict. There are many possible solutions how to solve this. The simplest solution is to keep more values in the same field.
-
+This solution, however, depends on the size of the universe. If the universe $U$ has a size of $M$, then we need to use a table of size $M$. This may and often is not feasible. For example, there are $2^{32}$ 32-bit integers. The main solution to this problem is to have some "good" hashing function $f:U \rightarrow [n]$, where $n$ is some desired table size. What means "good"? When we insert some item $a$ with key $k$ in the table, we insert at $f(k)$ index. When there is already value in the table, we get a hashing conflict. There are many possible solutions to this. The simplest solution is to keep more values in the same field.
 
 
 \subsection{Hashing Function Families}
@@ -118,18 +134,23 @@ Universality guarantees, that hashes are more or less evenly distributed. This i
 One problem with universality is that it allows for a hashing function family where all hashing functions hash from 1 to 0. This is prevented by being a hashing function family (c-k)independent. This property is sometimes called strong universality in the literature.
 
 \begin{defn}
-A family \( F \) of hashing functions from \( X \rightarrow Y \), where \( |Y| = n \), is \textbf{(c,k)-independent} if 
+A family \( F \) of hash functions from \( X \rightarrow Y \), where \( |Y| = n \), is \textbf{(c,k)-independent} if 
 \[ \forall (x_1, \dots, x_k \in X, y_1, \dots, y_k \in Y) \left( P\left(f(x_1) = y_1 \land \dots \land f(x_k) = y_k\right) \leq \frac{c}{n^k} \right), \]
 \end{defn}
-\subsection{Examples of Hashing Function Families}
+
+\subsection{Examples of Hash Function Families}
 
 \subsubsection{Linear Congurence}
-One of the simplest hashing functions is a linear congruence. This function is defined as:
+One of the simplest hash functions is linear congruence. This function is defined as:
 \begin{defn}
     Let \( p \) be a prime number, \(n\)  be from $\mathbf{N}$,  \( a \) a number from \([n-1]\), and \( b \) a number from \([p]\). Then the hashing function is defined as:
-    \[ f_{a,b}(x) = (ax + b) \% n \% p\]
+    \[ f_{a,b}(x) = (ax + b) \mod n \mod p\]
 
     Let $H_p^n$ be set of all such functions with prime $p$ and size $n$ , than we $H_p^n$ a linear congruence family.
 \end{defn}
  
-Linear congruence family is useful also in practice. Dictionaries in C\# are actually implemented using a linear congurence family. The main advantage of this family is that, if we choose the size of the universe we are hashing to, than we get a function from a linear congruence family practically for free.
+Linear congruence family is also useful in practice. Dictionaries in C\# are actually implemented using a linear congruence family. The main advantage of this family is that if we choose the size of the universe we are hashing to, then we get a function from a linear congruence family practically for free. The linear congruence family is $(2,4)$-independent. 
+[https://mj.ucw.cz/vyuka/dsnotes/06-hash.pdf]
+
+\subsubsection{Multitplyshift}
+Multiply shift family is another often used hash function family. For example murmurhash is based of it. It has one advantage over linear congruence. It being, that it does use only logical shift and 

@@ -1,35 +1,63 @@
-\chapter{Dotnet and C\# Preliminarie}
+\chapter{Dotnet and C\# Preliminaries}
 
-Vice omacky
+We chose C\# as the main programming language. This may seem like a weird choice, as many consider it a slow language. Why not C++, C, or Zig? C\# is probably a little slower than compiled languages due to being a jitted and garbage collected. This is, however little price for benefits we get. We do not need to worry about freeing memory, and users do not need to compile the source code for their machines.
+
+One main strength of C\# is that the compiler was rewritten with the idea of the compiler-as-a-service (CaaS) in mind. Originally, the compiler was written in C++, but later, Microsoft decided to rewrite it to C\#. Now, developers may use the compiler from the code itself.  This means compiling code during runtime and then using the newly compiled binaries is possible. Such a possibility is especially useful when working with data unknown during compile-time. Another example is the possibility of writing custom compilation errors. The new compiler is called Roslyn.
+
+We used these features extensively in this project to achieve better performance. For example, we speed up hash functions 2 to 4 times (depending on the machine used) by using runtime-generated code [TODO ADD  REFERENCE TO EXPERIMENTS]. Mainly due to these optimizations, we achieved about 130 million encodings per second while maintaining high code genericity.
+
+We do not expect a common reader to know all the little nuances of C\# or DotNet. Thus, we decided to provide readers with an introduction to them. However, we assume familiarity with some C-type language.
+
+\section{Dotnet and Just-In-Time Compilation}
+
+Every programming language needs to be translated into machine code. There are two main approaches: compiling and interpreting. Both approaches have their benefits and drawbacks regarding performance, security, and portability. By portability, we mean the ability to run our software easily on many different machines and architectures.
+
+Compiled languages are translated to the assembly before the program starts. This has two advantages. First, security: we may send our clients just the machine code for their specific machine, keeping the source code private. Second, performance: the processor gets the code already translated and doesn't need to do any additional work. The compiler can also optimize the code to run faster. The main problem is that not all processors have the same instruction sets, so we have to compile our software for each of them.
+
+Interpreted languages use an interpreter to read their instructions and translate them to machine code during runtime. This costs time. However, any machine equipped with such an interpreter can run the native code.
+
+There is also a third option: JIT (Just-In-Time) compilation, which lies somewhere in the middle. It involves both compiling and interpreting. It first takes our code written in the language and translates it to IL (Intermediate Language). IL contains most of the instructions used by modern processors. However not all machines have those, thus the IL code still needs to be translated to the true machine code instruction.
+This is done during runtime when our program first needs the code. 
+
+C\# is a JIT language. Native code is first translated to CIL (Common Intermediate Language), and then when the program runs, the CLR (Common Language Runtime) does the heavy work of compiling from CIL to machine code during runtime.
 
 \section{Memory}
 \subsection{Heap and Stack}
 There are two main types of memory: heap and stack. One should take care not to be confused by the name heap, as it has very little to do with the data structure used for finding the minimum in logarithmic time.
 
 \subsubsection{Stack}
-The stack and heap work quite differently. The stack functions as we would expect a stack to function: data is pushed from the top and also taken from the top. This is useful for recursive parts of our program and is mainly used by methods. One should easily see, that methods are in their nature recursive. As methods have only to options: call same other method or they can return. This leads to a tree structure. When we call a method, we first save the values held by accumulators (registers used by the processor) so they are free to be used by the called method. These values are saved to the on the top of stack. Then, after the called method finishes, the saved data is loaded back. Methods may also put their own data on the stack, but it is important to remember that every piece of data on the stack is not safe to use after the method that placed it there has returned. As the stack pointer is now under these data, so any method called later can and probably will overwrite them.
+Stack and heap work quite differently. Stack functions as we would expect a stack to function: data is pushed to the top and also taken from the top. This is useful for recursive parts of our program and is mainly used by methods. One should easily see that methods are, in their nature, recursive. Methods have basically only two options: call some other method or return. When we call a method, we first save the values held by accumulators (registers used by the processor) so they are free to be used by the called method. These values are saved on the top of the stack. Then, after the called method finishes, the saved data is loaded back. Methods may also put their own data on the stack, but it is important to remember that every piece of data on the stack is not safe to use after the method that placed it there has returned. As the stack pointer is now under these data, any method called later can and probably will overwrite them.
 
 \subsubsection{Heap}
-Sometimes we want to save data between method calls. The heap is used for this purpose. We request some memory of a certain size from the heap and then we are given such memory, that is guaranteed not be used. When we no longer need this memory, we return it back to the heap. This process is called allocating and deallocating memory.
+Sometimes, we want to save data between method calls. The heap is used for this purpose. We request memory of a certain size from the heap, and then we are given such memory that is guaranteed not to be used. When we no longer need this memory, we return it to the heap. This process is called allocating and deallocating memory.
 
-This sounds simple, but there are two problems. The first problem is that if we do not deallocate, we may run out of memory. The second problem is that when we free some memory, some part of the program may still treat that part memory as if it still holded original data, but that may or may not be true. These are real problems and may cause dangerous bugs and security issues, especially the latter.
+This sounds simple, but there are two problems. The first is that we may run out of memory if we do not deallocate. The second is that when we free some memory, some part of the program may still treat that part of the memory as if it still held original data, but that may or may not be true. These are real problems and may cause dangerous bugs and security issues, especially the latter.
 
 \subsection{Value and Reference Types}
 
-We now need to discuss C\# types. There are two kinds of C\# types: Value and Reference.
+We started with heap and stack for a reason. In C\#, there may be many different types, but there are only two main kinds of them: value and reference types. They both serve the same purpose of bundling data and operations together; they only differ in the place where they are located in memory. Value types live on the stack and reference types on the heap. As heap and stack differ greatly, value and reference types behave differently. It is important to know these nuances as they may cause performance issues or unexpected behavior leading to bugs. Also, before we explain the main differences, we take a little detour to terminology. When we are speaking about instances of type, we use term values for instances of value types and objects for instances of reference types.
 
 \subsubsection{Value Types}
-
-Value types live on the stack. Value types are for example integers of any length or floats. When we speak about an instance with a value type, we use the term value. We may also define our own value types, such as a complex number:
-
+The best example of a value type is an integer or any other numerical type in C\#. However, not all numerical types are implemented in C\#. For example, complex numbers may be missing or some other. As such, C\# provides us with the possibility to define new value types using struct keyword:
 \begin{lstlisting}
 struct ComplexNumber{
-    public double Real;
-    public double Imaginary;
+    public double Real = 0;
+    public double Imaginary = 0;
+    public ComplexNumber(){ 
+    //Constructor
+    }
 }
 \end{lstlisting}
-We should look on struct more as a syntax sugar for grouping some fields together. therefore when we call a method that has a value type as an argument, the value is passed by coping every single field. This behaviour is called pass by copy and it leads to some interesting behaviour. For example:
-
+The main intuition behind structs is that they are merely syntax sugar for grouping fields together. 
+\begin{lstlisting}
+//This is the same ->
+double cReal = 0;
+double cImaginary = 0;
+//To this ->
+var c = new ComplexNumber();
+\end{lstlisting}
+This leads to some interesting properties of value types.
+When we call the method, values are passed by copy into it. This means every single field of the value being passed into the method has to be copied. We can see this as a new instance of such a value type created. We show an example:
 \begin{lstlisting}
 var x  =  new ComplexNumber(){Real = 1, Imaginary = 1};
 var y  = new ComplexNumber(){Real = 1, Imaginary = 1};
@@ -40,25 +68,37 @@ ComplexNumber Add(ComplexNumber a, ComplexNumber b){
     a.Imaginary += b.Imaginary;
     return a;
 }
+// z.Real is 2
+// x.Real is 1
 \end{lstlisting}
+In this example, \texttt{z.Real} is 2, but \texttt{x.Real} is still 1. This is because the fields were copied; thus, when we added \texttt{b.Real} to \texttt{a.Real}, \texttt{x.Real} was not changed.
 
-In this example, z.Real is 2, but x.Real is still 1. This is because the field, were copied, thus when we add b.Real to a.Real, x.Real was not changed.
-This is something, we have to take remeber, when working with values, also this behaviour means the more field a value type has, the more expensive is to pass it to some method or to copy it as all the field need to be copied.
+This behavior is caused by the fact that values live on a stack. Thus, values' lifespan is limited by the life of the method creating them. 
+
+For example, if we passed the value type by a pointer to the place where such a value lies on the stack, we could not use the value safely after the method that created it returned, as it could be overwritten at any time.
+
+As copying the whole value type is required, we may sometimes face bottlenecks when using them, especially when the values copied contain many fields.
+
+Lastly, value types are always initiated. For numerical types, C\# gurrantees contain 0; if some value type contains a reference type field, it will hold a null value.
 
 \subsubsection{Reference Types}
-Reference types live on the heap. Instances of reference types are called objects. Every object has its data located on the heap, where it stays until deallocated. When we call a method that has a reference type as an argument, we just need to pass information about where the object lies on the heap. This information is called a reference, and thus this process is called argument passing by reference.
+We use reference types to model more complex ideas. They are often useful for modeling non-generic objects with global states, such as persons, database entries, and database connections. 
 
-We may define our own reference types using the keyword class:
+Value types are constrained by the lifespan of the method creating them. This is not an issue for reference types as
+space on the heap is guaranteed to them for eternity or at least until deallocation.
+As such, copying their fields is unnecessary when passing them to methods. We just need to pass information about where the object lies on the heap. This information is called a reference, and thus this process is called argument passing by reference
+
+Similarly to value types, we might want to define our reference types using the keyword class. We will use nearly the same example as when discussing value types. We only changed the structure to class according to the definition of ComplexNumber.
 
 \begin{lstlisting}
 class ComplexNumber{
     public double Real;
     public double Imaginary;
+    public ComplexNumber(){
+    //Constructor
+    }
 }
 \end{lstlisting}
-
-We are going to use the same example as we used for value types.
-
 \begin{lstlisting}
 var x  =  new ComplexNumber(){Real = 1, Imaginary = 1};
 var y  = new ComplexNumber(){Real = 1, Imaginary = 1};
@@ -69,27 +109,30 @@ ComplexNumber Add(ComplexNumber a, ComplexNumber b){
     a.Imaginary += b.Imaginary;
     return a;
 }
+// z.Real is 2
+// x.Real is 2
 \end{lstlisting}
+Although the code is the same, the result is not. \texttt{z.Real} is still 2, but \texttt{x.Real} is now 2. The reason is that \texttt{x} and \texttt{z} are just references pointing to the same object.
 
-Although the code is the same, the result is not. z.Real is still 2, but x.Real is now 2. The reason is that x and z are just references pointing to the same object. Thus, when we pass an object to a method, the only cost is a copy of the reference. One may ask why we should use value types when they are more expensive to pass to methods. The answer is that allocations to the heap are problematic and come with their own costs.
+Pass by reference has the advantage that when we pass an object to a method, the only cost is a copy of the reference. One may ask why we should use value types when they are more expensive to pass to methods. The answer is that allocations to the heap may be problematic and come with their own costs.
 
 \subsection{Garbage Collector}
-In the first section, we learned about the problems with the heap. Luckily for us, C\# is a memory-safe language. This means it solves both problems for us by using a garbage collector (GC). The garbage collector keeps track of all objects allocated by our program.
+In the first section, we learned about the problems with the heap, especially the problem with deallocating memory. Luckily for us, C\# is a memory-safe language. This means it solves both problems for us by using a garbage collector (GC). The garbage collector keeps track of all objects allocated by our program.
 
 \begin{rem}
-    This is technically not true, as C\# allows opting out of the safe context. However, this is something that is used very rarely and only when performance or the need for interop with other languages is required. One seeking such behavior should check unsafe context and Memory<T>.
+    This is technically not completely true, as C\# allows opting out of the safe context. However, this is something that is used very rarely and only when performance or the need for interop with other languages is required. One seeking such behavior should check unsafe context and Memory<T>.
 \end{rem}
 
-When the program needs more memory, it enters the garbage collecting phase, during which some objects to which no reference points are found and the memory used by them is freed. The word some is important, as the process is not deterministic, and we cannot be sure whether or when some unused objects will be collected.
+When the program needs more memory, it enters the garbage-collecting phase, during which some objects with no reference points are found, and the memory used by them is freed. The word some is important, as the process is not deterministic, and we cannot be sure whether or when some unused objects will be collected.
 
 This process is also expensive. This is normally not a problem, but when we allocate a lot in a hot path, it will probably hurt us in terms of performance. (Allocating a new object is also not costless). Also, some garbage collectors need to stop all computations. This may not be feasible in some applications where even short delays are not acceptable, for example, in high-frequency trading.
 
-This problem has only one solution: allocate less. It is possible to achieve this in many ways. Some methods are used quite normally. Some are very obscure and used very sporadically. Using values instead of objects is very common; one just needs to take care of the fact that pass by copy might get expensive for values having many fields. The next trick in the book is to recycle objects after they are no longer going to be used. This is usually done via pools and for some object, that are generaly expensive to allocate we are given a implemation in th base library. One iterested should check ArrayPool<T> or ThreadPool<T>.
+This problem has only one solution: allocate less. It is possible to achieve this in many ways. Some of the solutions are used quite often. Some solutions are very obscure and used very sporadically. Using values instead of objects is very common; one just needs to consider that passing by copy might be expensive for values having many fields. The next trick in the book is to recycle objects after they will no longer be used. This is usually done via pools, and for some objects that are generally expensive to allocate, we are given an implementation in the base library. One interested should check ArrayPool<T> or ThreadPool<T>.
 
 \section{Abstraction, Virtual Methods, Delegates, Interfaces}
 
 \subsection{Inheritance and Virtual Methods}
-Imagine implementing a probabilistic algorithm. This algorithm has a very low chance of cycling and never ending. Our goal is to use some heuristics to determine whether the current state is recoverable. A very simple heuristic is to set a maximum number of steps. We can implement the algorithm like this:
+Imagine implementing a probabilistic algorithm. This algorithm has a very low chance of cycling and never ending. We aim to use some heuristics to determine whether it is a good idea to continue computation. A very simple heuristic is to set a maximum number of steps. We can implement the algorithm like this:
 
 \begin{lstlisting}
 class ProbAlg {
@@ -137,7 +180,7 @@ class ProbAlgBetterStopCondition : ProbAlg {
 }
 \end{lstlisting}
 
-The virtual keyword marks the method as virtual, and the internal keyword marks the method as internal, so they may be used by classes inheriting from ProbAlg but not by any other class. Virtual methods' implementations may be overridden by their children. This is important as, during compile time, the compiler does not know which implementation is going to be used beforehand. This may cause some performance issues as the compiler cannot perform some of its optimizations.
+The virtual keyword marks the method as virtual, and the internal keyword marks the method as internal, so they may be used by classes inheriting from ProbAlg but not by any other class. Virtual methods' implementations may be overridden by their children. This is important as, during compile time, the compiler does not know which implementation will be used beforehand. This may cause some performance issues as the compiler cannot perform some of its optimizations.
 
 \begin{lstlisting}
 
@@ -156,7 +199,7 @@ Value types cannot be inherited. This makes sense as values are passed using cop
 
 \subsection{Interfaces}
 
-Let's say we need to work with groups but don't want to implement a special function for each group type. In this case, interfaces are the way to go.
+Let us say we need to work with groups but do not want to implement a special function for each group type. In this case, interfaces are the way to go.
 
 \begin{lstlisting}
 interface IGroupElement {
@@ -223,26 +266,248 @@ T AddAll<T>(List<T> elementsToAdd) where T : IGroupElement<T> {
 
 We have now defined a generic version of `AddAll`. `T` can be substituted by any type that fulfills all constraints. Currently, we have defined only one constraint: that `T` implements `IGroupElement<T>`. Now, `List<T>` can hold only objects or values of one type or their children. This solves the issue of different types in `List<IGroupElement>` causing runtime errors.
 
-Let's look at how generics behave for value and reference types. For every reference type, there is just one shared CIL code. For value types, every value type has its own CIL code. The code is compiled for the specific type when it is first needed during runtime. This is important because it means the value type does not need to be boxed. \cite{Generics1}
+Let's look at how generics behave for value and reference types. For every reference type, there is just one shared CIL code. Every value type has its own CIL code. The code is compiled for the specific type when it is first needed during runtime. This is important because the value type does not need to be boxed. \cite{Generics1}
 
-\section{Dotnet and Just-In-Time Compilation}
+\section{Expression Trees}
+Trees Expression are very useful C\# API. They allow us to get duck-typing in C\# without needing reflection (reflection is expensive and sometimes it may not be feasible due to its costs). This was especially useful before generic math. Expression trees allow us to build code during runtime and then compile and execute it. This may be useful when, for example, we would like to optimize our function for some parameters or we just do not know how the data will look; we want as much performance as possible.
+\subsection{Simple example}
+If we look at code, we may see it having a tree structure (generally, it is DAG), where nodes are some functions and leaves are constant or parameters. For example: 
+\begin{lstlisting}
+int IfOddAddOne(int input) {
+    if (input % 2 == 1){
+        return input + 1
+    }
+    return input;
+}
+\end{lstlisting}
 
-Every programming language needs to be translated into machine code. There are two main approaches: compiling and interpreting. Both approaches have their benefits and drawbacks in terms of performance, security, and portability. By portability, we mean the ability to run our software easily on many different machines and architectures.
+Might get translated to this:
+\begin{lstlisting}
+//Constant nodes
+one <- CONSTANT(1)
+two <- CONSTANT(2)
+//Parameter nodes
+input <- PARAMETER()
+//Operator nodes
+moduloByTwo <- MODULO(input, two)
+addOne <- ADD(input, 1)
+isOdd <- EQUALS(one, moduloByTwo)
+ifOddAddOne <- IF_ELSE(isOdd, addOne, input)
+//Function node
+F <- FUNCTION(input, ifOddAddOne)
+//Now we can use F as node
+two <- F(one)
+\end{lstlisting}
+    
 
-Compiled languages are translated to assembly before the program starts. This has two advantages. First, security: we can send our clients just the machine code for their specific machine, keeping the source code private. Second, performance: the processor gets the code already translated and doesn't need to do any additional work. The compiler can also optimize the code to run faster. The main problem is that not all processors have the same instruction sets, so we have to compile our software for each of them.
+C\# allows us to build such expressions during runtime and then to compile them and use them as any other delegate.
+If we wanted an expression tree for the previous code, we could do that with something like this:
 
-Interpreted languages use an interpreter to read their instructions and translate them to machine code during runtime. This costs time. However, any machine equipped with such an interpreter can run the native code.
+\begin{lstlisting}
+//This code was partially generated by ChatGpt
+using System.Ling.Expressions
+//Parameters
+var input = Expression.Parameter(typeof(int), "input");
+//Constants
+var constOne = Expression.Constant(1);
+var constTwo = Expression.Constant(2);
+// mod = input % 2 
+var mod = Expression.Modulo(input, constTwo);
+// if-else statement
+var condition = Expression.Equal(mod, constOne);
+var addOne = Expression.Add(input, constOne);
+var ifTrue = addOne;
+var ifFalse = input;
+//Condition
+var ifElse = Expression.Condition(condition, ifTrue, ifFalse);
+Expression<Func<int, int>> lambda 
+= Expression.Lambda<Func<int, int>>(ifElse, input);
+Func<int, int> compiled = lambda.Compile();
+\end{lstlisting}
 
-There is also a third option: JIT (Just-In-Time) compilation, which lies somewhere in the middle. It involves both compiling and interpreting. It first takes our code written in the language and translates it to IL (Intermediate Language). IL contains most instructions used by modern processors. IL code is then translated to machine code during runtime when first needed by our program.
+One can see that no output has been assigned. This is because, in Expression Trees, the returned value is always the value of the last expression. 
 
-C\# is a JIT language. Native code is first translated to CIL (Common Intermediate Language), and then when the program runs, the CLR (Common Language Runtime) does the heavy work of compiling from CIL to machine code during runtime.
+
+\iffalse
+\digraph{expressionTree1}{
+  const_1 -> b0;
+  input -> "+"
+  const_1 -> "+"
+  input -> "\%"
+  "\%" -> "=="
+  const_1 -> "=="
+  "==" -> if [label = "check"]
+  input -> if [label = "check is false"]
+  "+" -> if [label = "check is true"]
+}
+\fi
+
+\subsection{Construct, Compile}
+Expression trees have two phases. In the first phase, we construct the tree from smaller expressions or other Expression Trees. Expression trees are immutable, and this construction may be done during runtime. 
+Then we may compile the Expression Tree to get a lambda. Compiling is an expensive operation, and we should try to reuse compiled lambdas as much as possible, but the code is going to be optimized in the same way the code was written beforehand. 
+
+\subsection{Base API}
+We are going to explain some of Expression Trees' base APIs. We are not planning to cover the topic completely but to give a wilful reader a little peek into the concept.
+There are several different types of expressions: Constants, Parameters, Scopes, Operators, Callers, and Flow Controllers.
+
+\subsubsection{Constants}
+Constants represent a constants This constant needs to be known when we compile the Expression Tree.
+\begin{lstlisting}
+//Creates a constant expression of type string
+var text = Expression.Constant("text");
+//Creates a constant expression of type int
+var one = Expression.Constant(1);
+//We may specify the type explicitly
+one = Expression.Constant(1, typeof(int));
+//This fails during the compile phase as "q" has a type string and
+//no implicit conversion to int
+text = Expression.Constant("q", typeof(int));
+\end{lstlisting}
+
+\subsubsection{Parameters}
+Parameters may be both parameters and variables. They represent an expression to which a value can be written or read; thus, they work as variables in normal C\# code. There are no differences between them, and they may be used interchangeably. 
+\begin{lstlisting}
+//Create a parameter expression with type int
+var x = Expression.Parameter(typeof(int));
+// We may assign a value
+var assignment = Expression.Assign(x, Expression.Constant(1));
+//It is important to remember, that assignment represents
+\end{lstlisting}
+
+\subsubsection{Scopes}
+Scopes are important; they group expressions together. There are basically two types of them Block and Lambdas. They both contain a list of parameters and a list of expressions. Expressions are executed sequentially and may use only parameters in their own parameter list or in any other parameter list of Scope transitively containing it. Example:
+
+\begin{lstlisting}
+var x = Expression.Parameter(typeof(int));
+var assigment = Expression.Assign(x, Expression.Constant(1));
+
+//Scope behavior
+//Works correctly
+var firstScope = Expression.Block(new {x}, new {assigment});
+//May fail during the compile phase as assignment second 
+//scope does not contain x 
+var secondScope = Expression.Block(new {}, new {assigment});
+//Works correctly the containing scope provides such a variable
+var thirdScope = Expression.Block(new {x}, new {secondScope});
+//Fails during compile phase as x already is already declared
+//in fourthScope
+var fourthScope = Expression.Block(new {x}, new {firstScope});
+
+//Lambdas
+//It is useful to remember, that last 
+//executed expression is also going to be the returned value
+var f = Expression.Lambda<Func<int>>(firstScope);
+//This returns function always returns 1 
+Func<int> F = f.Compile();
+var f2 = Expression.Lambda<Func<int,int>>(secondScope, x);
+////This returns function always returns 1 
+Func<int, int> F2 = f2.Compile();
+\end{lstlisting}
+
+\subsubsection{Operators}
+Operators allow us to work with all C\# operators like =,==,+,-,<< etc. For example:
+\begin{lstlisting}
+var x = Expression.Parameter(typeof(int));
+var one = Expression.Constant(1);
+var two = Expression.Constant(2);
+
+
+// x = 1
+var assign = Expression.Assign(x, one);
+//x += 1
+var addAssign = Expression.AddAssign(x, one);
+// 1 * 2
+var multiply = Expression.Mutiply(one, two);
+// (1 * 2) + 2
+var add = Expression.Add(multiply, two);
+var minus = Exprssion.Minus(multiply, x);
+// ((1 * 2) + 2) - x
+\end{lstlisting}
+\subsubsection{Callers}
+Sometimes, we need to work with some classes or structures. They may have some fields, properties, or methods. Then, we may use expressions like Call, Field, or Property to call or get some value. It should be noted that in C\#, properties might be both methods and fields. This may lead to some nasty bugs if one is unsuspecting of this behavior. One can use the PropertyOrField expression to solve this.
+
+\begin{lstlisting}
+//Calls parameterless constructor
+var list = Expression.New(typeof(List<int>));
+//Call a method with name Add -> a.Add(1)
+var listAdd = Expression.Call(list, new {int}, "Add", 1);
+//We can get a value from property or field by using PropertyOrField
+var listCount = Expression.PropertyOrField(list, "Count");
+\end{lstlisting}
+
+\subsubsection{Flow Controls}
+Control flow is the basis of our programming. Thus, we may use expressions like if, then, loop, and goto. We show an example of a simple loop. 
+
+
+\begin{lstlisting}
+var i = Expression.Parameter(int);
+var zeroToi = Expression.Parameter(0);
+//Assign 0 to 1
+var condition = Expression.LessThan(i, Expression.Constant(10));
+//Add one to i
+var actionToDo = Expression.AddAssign(i, Expression.Constant(1);
+var breakLabel = Expression.Label("LoopBreak");
+Expression loop = Expression.Loop(
+    Expression.IfThenElse(
+        condition,
+        actionToDo,
+        Expression.Break(breakLabel)
+        ),
+    //Defines break label to jump to
+    breakLabel
+    );
+
+var scope = Expression.Scope(new {i}, new {zeroToi, loop });
+
+\end{lstlisting}
+
+This is equivalent to this code:
+\begin{lstlisting}
+int i = 0;
+while(true){
+    if(i < 10) break;
+    else i += 1;
+}
+\end{lstlisting}
+
+\subsection{Issues with Expression Trees}
+One very visible issue with them is that they contain a lot of boilerplate code and are not very readable. If we look at the two previous examples, the latter is clearly more readable. This is a recurring problem with them. Also, the previous example is part of the project's codebase, but it took many iterations to get it right. The native C# version was written in seconds with no bugs. This is not only a boilerplate problem but also a problem of no or very low static checking. This means that our code is mainly going to fail during runtime. We give an example of some possible issues that may lead to runtime errors.
+
+\begin{lstlisting}
+using System.Ling.Expressions
+//Parameters
+var input = Expression.Parameter(typeof(int), "input");
+//Constants
+var constOne = Expression.Constant(1);
+var constA = Expression.Constant('A');
+var add = Expression.Add(constOne, constA);
+
+Expression<Func<int, int>> lambda 
+= Expression.Lambda<Func<int>>(add);
+
+lambda.Compile() //Fails there 
+
+// but x = 1 + 'A' does not compile
+\end{lstlisting}
+
+One very recurring error is forgetting to increment a value in a while loop, looking like this:
+\begin{lstlisting}
+int i = 0;
+while(i < 10){
+    //Do something
+    i++;
+}
+\end{lstlisting}
+Normally, we get a warning that some of our code is unreachable, as we will be forever stuck in the loop. It is, however, not possible to do our code generated using Expression Tree, which exists only in runtime when it is too late to fix such a problem. 
+
+
 
 \section{Compiler Optimizations}
 
-As C\# has a compiler, there are some optimizations and potential performance bottlenecks one should be aware of.
+As C\# has a compiler, one should be aware of some optimizations and potential performance bottlenecks.
 
 \subsubsection{Cost of Method Call}
-Calling methods is not free. We need to do some preparations, mainly saving values from accumulators to the stack and then loading them back. This cost is very small, but it can add up if the method body is very small. For example:
+Calling methods is not free. We need to do some preparations, mainly saving values from accumulators to the stack and then loading them back. This cost is very small but can add up if the method body is small. For example:
 
 \begin{lstlisting}
 int AddTwo(int x) {
@@ -375,85 +640,4 @@ return a + 2;
 
 This saves us some unnecessary calculations that would otherwise need to be repeated. Modern compilers are quite advanced and can replace some expensive arithmetic operations, such as division and modulo, with less expensive ones, like multiplication. This can result in a significant performance boost, as demonstrated by the following experiment:
 
-Sometimes we do not know the value to divide with beforehand, but we would still like to benefit from compiler optimizations, as we expect to do many division with same divisor. There are three methods, how to achieve that in C\# Expression Trees, Struct Delegates with Runtime types or code generation. We shortly dicuss all three methods. All of them are quite advanced and should be used only, when it is really necessary.
-
-\subsection{Expression Trees}
-If we look on code, we may see it having a tree structure (generally its DAG), where nodes are some functions and leafs are constanst or paramenters. For example: 
-\begin{lstlisting}
-int IfOddAddOne(int input) {
-    if (input % 2 == 1){
-        return input + 1
-    }
-    return input;
-}
-\end{lstlisting}
-
-Might get translated to this: TODO graph
-
-\iffalse
-\digraph{expressionTree1}{
-  const_1 -> b0;
-  input -> "+"
-  const_1 -> "+"
-  input -> "\%"
-  "\%" -> "=="
-  const_1 -> "=="
-  "==" -> if [label = "check"]
-  input -> if [label = "check is false"]
-  "+" -> if [label = "check is true"]
-}
-\fi
-
-C\# allows us to build such expressions during runtime and then to compile them and use as any other delegate.
-If we wanted a expression tree for the previous code, we could do that with something like this:
-
-\begin{lstlisting}
-//This code was partially generated by ChatGpt
-using System.Ling.Expressions
-//Parameters
-var input = Expression.Parameter(typeof(int), "input");
-//Constants
-var constOne = Expression.Constant(1);
-var constTwo = Expression.Constant(2);
-// mod = input % 2 
-var mod = Expression.Modulo(input, constTwo);
-// if-else statement
-var condition = Expression.Equal(mod, constOne);
-var addOne = Expression.Add(input, constOne);
-var ifTrue = addOne;
-var ifFalse = input;
-//Condition
-var ifElse = Expression.Condition(condition, ifTrue, ifFalse);
-Expression<Func<int, int>> lambda 
-= Expression.Lambda<Func<int, int>>(ifElse, input);
-Func<int, int> compiled = lambda.Compile();
-\end{lstlisting}
-
-One can see, that no output is assigned. This is because in Expression Trees the returned value is always the value of last expression. There are few disatvantages of Expression Trees. The first and most significant is, that the code is not statically checked. For example this code is going to compile, but fails during runtime.
-
-\begin{lstlisting}
-//This code was partially generated by ChatGpt
-using System.Ling.Expressions
-//Parameters
-var input = Expression.Parameter(typeof(int), "input");
-//Constants
-var constOne = Expression.Constant(1);
-var constA = Expression.Constant('A');
-var add = Expression.Add(constOne, constA);
-
-Expression<Func<int, int>> lambda 
-= Expression.Lambda<Func<int>>(add);
-
-lambda.Compile() //Fails there 
-
-// but x = 1 + 'A' does not compile
-\end{lstlisting}
-This is accutally double edged sword as it allows us to have ducktyping, but at no or little cost to performance. 
-
-
-
-
-\begin{lstlisting}
-
-
-\end{lstlisting}
+Sometimes, we do not know the value to divide with beforehand, but we would still like to benefit from compiler optimizations, as we expect to do many divisions with the same divisor. We know only one method to achieve such functionality without too many obstacles. It is expression trees. One could also try source generation or System.Reflection.Emit namespace to emit CIL during runtime. However, we are not going to describe those techniques.

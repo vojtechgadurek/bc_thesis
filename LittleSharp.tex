@@ -1,22 +1,27 @@
 \chapter{LittleSharp}
 \section{Motivation}
-We used expression trees extensively in the project, but they have a few issues. The first and foremost is that the native Expression Tree library is not statically checked. This leads to many hard-to-debug errors. Also, code written in Expression Trees is complex to read, making debugging such code much harder. As such, we decided to create a wrapper around Expression Trees that would provide some static checking but not at the cost of versatility. The library's main goal is to serve our project.  The need is to handle arithmetic operations and some eventual method calls mainly. It is usable by others, and it is not a must.
+We used expression trees extensively in the project, but they have a few issues. The first and foremost is that the native Expression Tree library is not statically checked. This leads to many hard-to-debug errors. Also, code written in Expression Trees is complex to read, making debugging such code much harder. As such, we decided to create a wrapper around Expression Trees that would provide some static checking but not at the cost of versatility. We created a standalone library called LittleShape. Even though its main purpose was to serve the needs of our project, we think it may be useful for others. However, it is mainly limited to operations with numeric types.  
 
-\section{Hot to use}
-In this section, we shortly introduce the library. First we will write short function, that declare c with value 5 and then add a,b,c and finaly return such sum.
+\section{How to use}
+In this section, we introduce the library briefly. First, we will write a short function that declares $c$ with value $5$, adds $a$,$b$, and $c$, and returns the sum.
 \begin{lstlisting}
-// Declare a function with two parameters a and b
-var f = CompiledFunction
+// Declare a function with two parameters, a and b
+var f = CompiledFunctions
+    //Create<TIn1, ... , TInn, TOut>(out var input1_, ...)
+    //creates a function with arguments with types TIn1 to Tinn
+    //and return type TOut
+    //when one wants to create action,
+    //they should use CompiledActions class
     .Create<int, int, int>(out var a_, out var b_);
 // a and b have types Variable<int>
-// f.S is a scope, that is going to be executed, when f is called
-// S is abreviation for Scope
+// f.S is a scope that is going to be executed when f is called
+// S is an abbreviation for Scope
 // c = 5; 
 f.S.DeclareVariable<int>(out var c_, 5)
-// c is have also type Variable<int>
+// c have also type Variable<int>
 // return a + b + c
 	.Assign(f.Output, a.V + b.V + c.V);
-// f.Output is the value, that is going to be returned
+// f.Output is the value that is going to be returned
 // .Assign(a, b) is the same as a = b;
 // a.V is equal to SmartExpression<T>, V is abbreviation for Value
 Expression<Func<int, int, int>> addExpression = f.Construct();
@@ -24,9 +29,9 @@ Func<int, int, int> add = addExpression.Compile();
 //By calling Compile, the expression tree is then compiled 
 \end{lstlisting}
 
-We may also use flow control statements, like while and if. Imagine having a buffer B and some number N to determine the number of values in the buffer.  We would like to sum all values together, then we could use this code:
+We may also use flow control statements, like while and if. Imagine having a buffer $B$ and some number $N$ to determine the number of values in the buffer.  We would like to sum all values together, then we could use this code:
 \begin{lstlisting}
-// Declare a function with two parameters a and b
+// Declare a function with two parameters, a and b
 var f = CompiledFunction
     .Create<int[], int, int>(out var B_, out var N_);
 f.S.DeclareVariable(out var i_, 0)
@@ -48,7 +53,7 @@ f.S.DeclareVariable(out var i_, 0)
 
 Func<int[], int, int> F = f.Construct().Compile()
 \end{lstlisting}
-This code is equivalent to this:
+This code is equivalent to following:
 \begin{lstlisting}
 // Declare a function with two parameters a and b
 
@@ -71,7 +76,7 @@ a.S.Macro(var out table_T, table_.V.ToTable<int>());
 
 \subsection{Debugging}
 Debuging expression trees is hard. There are Visual Studio extensions for that. Two libraries can be used to visualize them: Readable Expressions and Expression Tree Visualizer. \cite{ExpressDebug} 
-Sadly, Readable Expression does not work with LittleSharp. One can also use some tools provided by the library itself. One can use Print(), to log some data. For example:
+Sadly, Readable Expression does not work with LittleSharp. One can also use some tools provided by the library itself. For example, it is possible to use Print(), to log some data. For example:
 \begin{lstlisting}
 
 // Logger has to implement method WriteLine(string line)
@@ -103,8 +108,8 @@ a.Construct().Compile()()
 \end{lstlisting}
 
 
-\section{Implementation}
-\subsection{}section{Architecture}
+\section{Implemenation details}
+\subsection{Architecture}
 There are three main types: Variables, SmartExpression, Scopes
 \subsubsection{Variables}
 Variable wraps two possible expressions - ParameterExpression and Variable Expression. This means a Variable should be seen as an expression that holds a value, and a value might be assigned to it. There is a generic version of Variable, and this is Variable<T>. This should be preferred to use as it contains information about the type of variable that is held by Variable<T>.
@@ -116,7 +121,7 @@ SmartExpression wraps all expressions. As Expressions are the main building bloc
 
 
 \subsubsection{Scope}
-Scopes are the most interesting. They hold together SmartExpressions and Variables. One should imagine as a normal scope in C\#, would look like. They should make it easier not to use variables from different scopes. There is also a generic version, Scope<T>, that has a return type of T. 
+Scopes are the most interesting and complex of the types provided. They hold together SmartExpressions and Variables. One should imagine as a normal scope in C\#, would look like. They should make it easier not to use variables from different scopes. A generic version, Scope<T>, also has a return type of T. 
 
 
 \subsection{SmartExpression operators}
@@ -161,9 +166,9 @@ S.DeclareVariable(d_, 0l);
 a_ + b_; //Compile error
 a_.V + b_.V; // Compiles
 a_.V + c_.V; // Compile error as + is overloaded only for 
-//SmartExpresion<T>s with same T
-a.V + d.V; // Compile error for the same reason
-a.V.Convert<long>() + d.V; // Compiles
+//SmartExpresion<T>s with the same T
+a_.V + d.V; // Compile error for the same reason
+a_.V.Convert<long>() + d.V; // Compiles
 //This could be translated to this code (long) a + d 
 
 a_.V.ForceType<long>() + d.V;
@@ -174,10 +179,10 @@ a_.Assign(S, b_.V); //Compiles
 a_.Assign(S, d_.V); //Does not compile as to Variable<T> 
 // may be only assigned value with type T
 \end{lstlisting}
-This behavior provides enough type of safety to catch most errors, especially bad assignments.
+This behavior provides enough safety to catch most errors, especially bad assignments.
 
 \subsection{Scopes}
-Scopes are more interesting. They hold both variables and expressions to be executed. We may imagine that they hold a list of expressions and a list of variables. Expressions are executed when in the order in which they were added to the scope. It is not executed when we do not add an expression to the scope. All variables are declared before all expressions. One should not forget when declaring a variable with some assigned value, that this assigning value is, in reality, an expression. This means that we are doing two things: declaring a variable and assigning a value to it. Example: 
+Scopes are more interesting. They hold both variables and expressions to be executed. We may imagine that they hold a list of expressions and a list of variables. Expressions are executed when in the order in which they were added to the scope. It is not executed when we do not add an expression to the scope. All variables are declared before all expressions. When declaring a variable with some assigned value, one should not forget that this assigned value is, in reality, an expression. This means we are doing two things: declaring a variable and assigning a value. Example: 
 \begin{lstlisting}
 var S = new Scope();
 S
@@ -190,20 +195,20 @@ S
     .Function( (x) => x + 13, x_, out var y_)
     .Assign(b_, y_)
 
-//First are declared variables a_ and b_
+//First we declared variables a_ and b_
 //Then a_ = 0
 //Then b_ = 13
 \end{lstlisting}
 
-Scopes may be contained in other scopes, and they may also contain them. Variables may be used only from the scope they are declared in or from any scope contained in that scope. The property being contained is transitive. This is the same behavior as one would expect from normal scopes in C\#.
+Scopes may be contained in other scopes and may also contain them. Variables may be used only from the scope they are declared in or any scope contained in that scope. The property being contained is transitive. This behavior is the same as expected from normal scopes in C\#.
 
 Scopes may or may not have a return value. 
 
 
 \section{Future work}
-Currently, this library is mostly experimental and serves more as a glimpse into a concept than a fully functional library. This makes sense as it was more of a side project created out of a need for better API for Expression Trees. 
+This library is mostly experimental and serves more as a glimpse into a concept than a fully functional library. This makes sense as it was a side project created out of a need for better API for Expression Trees. 
 
-There is technical debt in Architecture. The main problem is, that when Scope cannot be added as Scope to other Scope. They need to be made a SmartExpression first. Which is problematic as it make analysis of such code much harder.
+There is some technical debt in architecture. The main problem is that when a Scope cannot be added as a Scope to another Scope, it needs to be made a SmartExpression first, which is problematic as it makes analyzing such code much harder. To solve this problem, decupling scope trees from expression trees could be a good idea.
 
-LittleSharp would benefit enormously from using Roslyn more extensively, especially using code generators and analyzers to build less error-prone experience. Analysers could be used to write custom compile errors thus helping user to debug code written using SmartExpression better. Code Generators could be used to create more advanced type system supporting custom types.
+LittleSharp would benefit enormously from using Roslyn more extensively, especially source generators and analyzers, to build a less error-prone experience. Analyzers could be used to write custom compile errors, thus helping users debug code written using SmartExpression better. Code Generators could be used to create a more advanced type system supporting custom types.
 

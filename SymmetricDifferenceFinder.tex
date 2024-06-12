@@ -1,0 +1,264 @@
+\chapter{SymmetricDifferenceFinder}
+
+\section{Motivation}
+We aimed to develop a library to test different approaches to solve set recovery problems. We decided we would like performance and modifiability, even at the cost of speed and ease of development. Performance is essential because the expected use case may deal with massive data sets.  We need modifiability to be able to change or replace some components easily.
+
+\section{Overview}
+SymmetricDifferenceFinder is our project's core library. It is a small framework for building solutions to the set recovery problem. It allows users to easily modify or replace many of its components and parts, allowing them to test different approaches without repeating themselves.  
+
+\subsection{Encoding-Decoding Pipeline}
+There are two main phases: encoding and decoding. During encoding, we encode our data using some small sketches. There should be one sketch for each set. During decoding, we first take sketches of sets we want to find symmetric differences, merge them, and then run a decoding algorithm on the result of merging. This step may fail. If it fails, we then need to change the parameters and rerun the algorithm from the start.
+
+\subsection{Sketch/Table}
+The most important thing is to choose a Sketch/Table to use. We first make a little detour into the difference between Tables and Sketches. Tables are used for encoding, and Sketches are utilized for decoding. Most implementations may be the same, but the library's architecture allows the implementation of different Sketches for the same Table.
+
+If not said explicitly, we will use Sketch with the meaning of both Table and Sketch.
+
+One should view Sketch as an array with overloaded methods to "add" and "remove" items.
+
+This is, for example, an ITable interface. Encoding relies on eveSketchtch to implement this interface. 
+\begin{lstlisting}
+public interface ITable
+{
+    void Add(Hash key, Key value);
+    int Size();
+}
+\end{lstlisting}
+
+\subsection{Hashing Functions}
+Hashing functions are used in both phases. One must use the same set hashing function for encoding and decoding. This set is expected to implement IEnumerable<Expression<Func<ulong, ulong> > interface. This may, for example, be a List<Expression<Func<ulong, ulong> >. Order is not important. Some basic hashing functions are provided by the FlashHash library. One can also implement their own.
+
+\subsection{Encoder}
+Encoders are used in the encoding phase. There are two implementations of Encoders: Encoder<TTable> and NoConflictEncoder<TTable>. TTable has to implement an ITable interface and be a value type (this is to get inline). NoConflictEncoders expect that no two hashing functions that have intersecting ranges exist. There are two possible interfaces for implementing IEncoder and IParralelEncoder.
+
+\subsection{Decoders}
+Decoders are used in the decoding phase. They should be given a sketch and then return decoded values and information on whether decoding was successful. There are two possible decoders: HPWDecoder, based on the HWP algorithm, and HyperGraphDecoder, which uses standard hypergraph decoding. It should be noted that these two decoders may not be used interchangeably because they need different contracts from Sketch.
+
+\subsection{HWPDecoder}
+HPWDecoder is based on the HPW algorithm. It allows the removal of items that are not present in the set or that are not going to be preset after the encoding ends. Due to its nature, it cannot distinguish whether some element in the symmetric difference of sets $A$ and $B$ was an element of $A$ or an element of $B$.
+
+\subsection{HyperGraphDecoder}
+It uses a [algorithm] to find the largest $2$ core of the hypergraph. In its base version, it cannot remove items that are not present in the sketch or that will be present. We also implemented an improved version of such an algorithm, that supports such operations. 
+
+\subsection{Massagers}
+Massagers try to take a Decoder in an unrecoverable state and shake little with the data to increase recoverability. Their work only on some data. We need to guess some items, possibly present in the symmetric difference, from already decoded keys. They are especially useful when only a few items remain undecoded. Their effectiveness depends largely on how good our guesses are.
+
+\subsection{Data sources}
+The library implements multiple possible data sources. RedaFasta may be used to provide a Fasta file as a data source, and multiple random data generators are available for testing purposes.
+
+\subsection{Testing}
+One can also find some useful tools for writing TODO.
+
+
+\section{Building a Custom Solution}
+This section will describe how to use this library to create a custom solution to set recovery problems. For example, we would like to improve a solution using HyperGraphDecoder using a space-saving dictionary.
+
+\subsection{Creating a table}
+A table needs to conform to the ITable interface interface. We are going to implement a simpler version of the table. We expect that items will only be removed from tSketchtch during the decoding phase. This is true if we have two sets $A$ and $B$ and $B \subseteq A$.
+\begin{lstlisting}
+//Tables need to be structs
+struct IBLTTableImprovedMemory: ITable
+{
+    ulong[] _keySums;
+    SpaceSavingDictionary _counts;    
+    public IBLTTableImprovedMemory(int size){
+        _data = ulong[size];
+        _counts = new SpaceSavingDictionary(size);
+        _hashSum = new SpaceSavingDictionary(size);
+    }
+    // Hash is allias for ulong
+    // Key is allias for ulong
+    // This means writing ulong or Hash or Key is equivalent
+    void Add(Hash key, Key value){
+        _keySums[key] += value;
+        _counts.Add(1);
+    }
+}
+\end{lstlisting}
+
+\subsection{Choosing Hash Functions}
+After choosing a table or writing its implementation, one should select a set of hashing functions. This set should implement an IEnumerable<T> interface, where T is Expression<Func<ulong, ulong> >. The hash function range should not exceed the table size; otherwise, the program fails during runtime.
+
+\begin{lstlisting}
+using FlashHash;
+//Simplest solution is this
+ulong size = 10;
+//This creates an array holding one hash function using modulo
+//This approach has a problem with performance
+//One should rather FlashHash library
+Expression<Func<ulong, ulong>>[] hfs = [(x) => x % size];
+//Solution using FlashHash library
+//This solution gets us two Linear Congruence hash function
+//with not conflicting ranges
+hfs= 
+[ 
+HashingFunctionProvider
+    .Get(typeof(LinearCongruenceFamily), size / 2, 0).Create(),
+HashingFunctionProvider
+    //5 sets an offset to the hash function
+    //It means all values of hashes are going to be increased by 5
+    .Get(typeof(LinearCongruenceFamily), size / 2, 5).Create(),
+]
+\end{lstlisting}
+\subsection{Choosing Encoder}
+The basic library currently offers two encoders: Encoder and NoConflictEncoder. NoConflictEncoder expects that no hash functions intersect in ranges. This allows for some optimizations during encoding; namely, it will enable parallel writing to the table. 
+
+\begin{lstlisting}
+Expression<Func<ulong, ulong>>[] hfs;
+int size = 10;
+var config = 
+    EncoderConfiguration<IBLTTableImprovedMemory>(hfs, size);
+//Factory does most of the compiling, the user
+// seeking performance should reuse Factory as much
+// as possible
+var factory = EncoderFactory<IBLTTableImprovedMemory>(
+    config, 
+    //This is table factory
+    (size) => new IBLTTableImprovedMemory(size)
+)
+IDecoder decoder = factory.Create()
+\end{lstlisting}
+
+\subsection{Using Encoder}
+The user must write their method to wrap a data source and encoder. Here, we provide an example of using RedaFasta to read the files in [SomeFormat]. 
+\begin{lstlisting}
+//Opening a [SomeFormat] file
+string fastaFilePath = "test.test";
+var config = FastaFile.Open(new StreamReader(fastaFilePath));
+var reader = new FastaFileReader(
+    config.kMerSize, config.nCharsInFile, config.textReader
+    );
+
+//Some instances implementing the IEncoder interface
+IEncoder encoder;
+
+//It may be a good idea to set the buffer to some size that is large enough
+var buffer = new ulong[1024 * 1024];
+while (true)
+{
+    var data = reader.BorrowBuffer();
+    if (data is null)
+    {
+        break;
+    }
+    //ParralelEncode may speed the encoding
+    encoder.ParralelEncode(buffer, data.Size);
+    reader.RecycleBuffer(data);
+}
+
+encoder.GetTable() //Returns table
+\end{lstlisting}
+
+\subsection{Sketch}
+We should revisit the definition of IBLTTableImprovedMemory. We decided to use HyperGraphDecoder. HyperGraphExpect a sketch to implement IHyperGraphDecoderSketch<TSketch>. Now, we have two choices implement a brand new Sketch and some method transforming Table to the new Sketch or extend IBLTTableImprovedMemory to implement ISketch interface. We are going to use the second way. We will not implement it entirely, but to show important parts. 
+
+\begin{lstlisting}
+struct IBLTTableImprovedMemory: 
+    ITable,
+    IHyperGraphDecoderSketch<IBLTTableImprovedMemory>
+{
+    ulong[] _keySums;
+    SpaceSavingDictionary _counts;    
+    public IBLTTableImprovedMemory(int size){
+        _data = ulong[size];
+        _counts = new SpaceSavingDictionary(size);
+        _hashSum = new SpaceSavingDictionary(size);
+    }
+    void Add(Hash key, Key value){
+        _keySums[key] += value;
+        _counts.Add(1);
+    }
+    //This allow the decoding algorithm 
+    //to remove items from buckets
+    void Remove(Hash key, Key value){
+        _keySums[key] -= value;
+        _counts.Add(-1);
+    } 
+    int GetCount(Hash key) => _counts.Get(key);
+    //Now, there is little bit a tricky part
+    //we need to implement public looks pure
+    //if this method is not defined decoder fails during runtime
+    static Expression<Func<ulong, IBLTTable, bool>>
+    GetLooksPure(HashingFunctions hashingFunctions)
+    {
+    var f = CompiledFunctions
+            .Create<ulong, IBLTTable, bool>(
+                out var key_, 
+                out var sketch_);
+                
+    f.S.Assign(f.Output, false)
+        .DeclareVariable(
+            out var count_,
+            sketch_.V.Call<int>("GetCount", key_.V)
+            )
+        .IfThen(
+            //Bucket is pure when there is only one item 
+            //hashed to it
+            !(count_.V == 1),
+            new Scope().GoToEnd(f.S)
+                )
+    return f.Construct();
+}
+}
+\end{lstlisting}
+\subsection{Choosing Decoder}
+If we decided to implement an IHyperGraphDecoderSketch<TSketch>, we might use only a decoder that can use such Sketch. There is only one implementation, and this is currently a HyperGraphDecoder. We first need to merge the two sketches of the two Sets; we would like to find symmetric differences. 
+\begin{lstlisting}
+//Using a hypergraph decoder
+IBLTTableImprovedMemory sketch1;
+IBLTTableImprovedMemory sketch2;
+//Know we want to merge these into sketches
+//Every sketch needs to implement SymmetricDifference()
+//So, imagine we implemented such a method
+//This implementation could loop something like this:
+public IBLTTable SymmetricDifference(IBLTTable other)
+{
+    if (other.Size() != Size())
+    {
+        throw new InvalidOperationException(
+            "Sketches do not have same sizes"
+            );
+    }
+    IBLTCell[] data = new IBLTCell[Size()];
+    _table.CopyTo(data, 0);
+    //This means if some a was encoded in A and also B
+    //Then it is not encoded in the merged sketch
+    for (int i = 0; i < data.Length; i++)
+    {
+        IBLTCell otherCell = other.GetCell((ulong)i);
+        _table[i].KeySum -= otherCell.KeySum;
+        _count.Add(i, -otherCell.GetCount(i));
+    }
+    return new IBLTTable(data);
+}
+//Know we just need to merge the two sketches
+sketch1.SymmetricDifference(sketch2);
+\end{lstlisting}
+
+After we get a merged sketch, we may create a decoder and use it.
+\begin{lstlisting}
+IEnumerable<Expression<Func<ulong, ulong>> hfs;
+var factory = HypergraphFactory(hfs);
+var decoder = factory.Create(sketch);
+decoder.Decode()
+//We may examine the decoding state by
+decoder.EncodingState
+//This property may have many possible states
+//there are three most useful:
+// - *Success*
+// - *Failure*
+// - *Shotdown* (have not finished) 
+
+decoder.GetDecodedValues() 
+// Returns a hash set of values in the symmetric difference
+//We may get some decoded values even
+//when the algorithm is in a fail state.
+\end{lstlisting}
+
+\section{Buffers size}
+Buffer sizes: Todo
+Optimize the right size of buffers
+
+
+\section{Future Work} 
+    
