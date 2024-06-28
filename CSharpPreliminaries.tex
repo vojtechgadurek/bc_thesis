@@ -342,8 +342,8 @@ One can see that no output has been assigned. This is because, in Expression Tre
 }
 \fi
 
-\subsection{Construct, Compile}
-Expression trees have two phases. In the first phase, we construct the tree from smaller expressions or other Expression Trees. Expression trees are immutable, and this construction may be done during runtime. 
+\subsection{Construct-Compile}
+We work with Expression trees in two phases. In the first phase, we construct the tree from smaller expressions or other Expression Trees. Expression trees are immutable, and this construction may be done during runtime. 
 Then we may compile the Expression Tree to get a lambda. Compiling is an expensive operation, and we should try to reuse compiled lambdas as much as possible, but the code is going to be optimized in the same way the code was written beforehand. 
 
 \subsection{Base API}

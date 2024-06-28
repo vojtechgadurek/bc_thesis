@@ -102,7 +102,9 @@ where TPRIME : struct, IConstant
 // Then hf.Invoke = (x) => (1*x + 6) %  11 % 6;
 // But compiler knows this during compilation
 \end{lstlisting}
-This works. There is one small problem: We need access to families of hashing functions, but we cannot implement a constant type for every number. The solution to this is IL code and runtime types. It is possible in C\# to create types during runtime, and then we may use reflection to build hashing functions out of the created constant. Implementation of the Linear Congruence family would thus look like this:
+This works. If we look at the generated IL code, we see that all values got inlined:
+
+There is one small problem: We need access to families of hashing functions, but we cannot implement a constant type for every number. The solution to this is IL code and runtime types. It is possible in C\# to create types during runtime, and then we may use reflection to build hashing functions out of the created constant. Implementation of the Linear Congruence family would thus look like this:
 
 \begin{lstlisting}
 static class ConstantFactory(){
@@ -129,6 +131,7 @@ class LinearCongruenceFamily {
     }
 }
 \end{lstlisting}
+
 
 \subsubsection{Constant Factory}
 The implementation of such library function may look something like this:
@@ -167,7 +170,7 @@ public static Type CreateRuntimeConstant(long value)
     return tb.CreateType();
 } 
 \end{lstlisting}
-
+This solution has a small problem. It does not work, and we do not know why. We suppose Roslyn treats Runtime-generated types differently, but we did not investigate further.
 
 
 \subsection{Solution using Expression Trees (LittleSharp)}
@@ -192,11 +195,11 @@ var CreateLinearCongruenceHashingFunction =
 
 \subsection{Comparing aproaches}
 Both approaches add significant complexity to the project. The main issue is that switching the context between runtime-generated and normal code is not smooth. One needs to use reflection calls in case of IL-generated code or delegates calls for Expression Trees. 
-Also, using runtime-generated code will cause type safety issues. This is because types cannot be checked before the code is generated, which happens during runtime. This may cause many hard-to-find bugs that may cause runtime errors.
+Also, using runtime-generated code will cause type safety issues. This is because types cannot be checked before the code is generated during runtime. This may cause many hard-to-find bugs that may cause runtime errors.
 
-Both approaches are comparable. They both lead to constant optimized code and both them allows inlining with some addtional work. Expression Trees are easier to work with because their API is simpler, and they require much less reflection code. Some type of safety can also be added; this is discussed in the chapter LittleSharp. Finally, expression trees are probably used more by the community. This means there are more sources to learn about them.
-Taking this all into account, we have chosen the approach using Expression Trees.
+Both approaches are comparable. They both lead to constant optimized code and allow inlining with some additional work. Expression Trees are easier to work with because their API is simpler, and they require much less reflection code. Some type of safety can also be added; this is discussed in the chapter LittleSharp. Finally, expression trees are probably used more by the community, which means there are more sources to learn about them.
 
+Secondly, and most importantly, we are not sure whether we can make the latter approach work. We could possibly do some hacks, maybe using a source generation or modifying Roslyn itself. Considering this, we have chosen the approach using Expression Trees. 
 \section{Peformance}
 
 ToDo 

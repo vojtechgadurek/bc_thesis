@@ -15,119 +15,48 @@
 %       use curly brackets ({T}hailand, {HIV}).
 %  ===========================================================================
 %
-
-@BOOK{Andel07,
-  title = {Základy matematické statistiky},
-  publisher = {Matfyzpress},
-  year = {2007},
-  author = {Anděl, J.},
-  address = {Praha},
-  series = {Druhé opravené vydání},
-  isbn = {80-7378-001-1}
+@inproceedings{DBLP:conf/soda/Molloy04,
+  author       = {Michael Molloy},
+  editor       = {J. Ian Munro},
+  title        = {The pure literal rule threshold and cores in random hypergraphs},
+  booktitle    = {Proceedings of the Fifteenth Annual {ACM-SIAM} Symposium on Discrete
+                  Algorithms, {SODA} 2004, New Orleans, Louisiana, USA, January 11-14,
+                  2004},
+  pages        = {672--681},
+  publisher    = {{SIAM}},
+  year         = {2004},
+  url          = {http://dl.acm.org/citation.cfm?id=982792.982896},
+  timestamp    = {Thu, 24 Mar 2022 09:38:31 +0100},
+  biburl       = {https://dblp.org/rec/conf/soda/Molloy04.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
+}
+@inbook{doi:10.1137/1.9781611977585.ch21,
+author = {Jakob Bæk Tejs Houen and Rasmus Pagh and Stefan Walzer},
+title = {Simple Set Sketching},
+booktitle = {2023 Symposium on Simplicity in Algorithms (SOSA)},
+chapter = {},
+pages = {228-241},
+doi = {10.1137/1.9781611977585.ch21},
+URL = {https://epubs.siam.org/doi/abs/10.1137/1.9781611977585.ch21},
+eprint = {https://epubs.siam.org/doi/pdf/10.1137/1.9781611977585.ch21},
+    abstract = { Imagine handling collisions in a hash table by storing, in each cell, the bit-wise exclusive-or of the set of keys hashing there. This appears to be a terrible idea: For an keys and n buckets, where α is constant, we expect that a constant fraction of the keys will be unrecoverable due to collisions. We show that if this collision resolution strategy is repeated three times independently the situation reverses: If α is below a threshold of ≈ 0.81 then we can recover the set of all inserted keys in linear time with high probability. Even though the description of our data structure is simple, its analysis is nontrivial. Our approach can be seen as a variant of the Invertible Bloom Filter (IBF) of Eppstein and Goodrich. While IBFs involve an explicit checksum per bucket to decide whether the bucket stores a single key, we exploit the idea of quotienting, namely that some bits of the key are implicit in the location where it is stored. We let those serve as an implicit checksum. These bits are not quite enough to ensure that no errors occur and the main technical challenge is to show that decoding can recover from these errors. }
 }
 
-@BOOK{Cormode_Yi_2020, place={Cambridge}, title={Summaries for Sets}, booktitle={Small Summaries for Big Data}, publisher={Cambridge University Press}, author={Cormode, Graham and Yi, Ke}, year={2020}} 
-
-@BOOK{Andel98,
-  title = {Statistické metody},
-  publisher = {Matfyzpress},
-  year = {1998},
-  author = {Anděl, J.},
-  address = {Praha},
-  series = {Druhé přepracované vydání},
-  isbn = {80-85863-27-8}
-}
-
-@ARTICLE{Cox72,
-  author = {Cox, D. R.},
-  title = {Regression models and life-tables (with {D}iscussion)},
-  journal = {Journal of the Royal Statistical Society, Series B},
-  year = {1972},
-  volume = {34},
-  pages = {187--220},
-  number = {2}
-}
-
-@ARTICLE{DempsterLairdRubin77,
-  author = {Dempster, A. P. and Laird, N. M. and Rubin, D. B.},
-  title = {Maximum likelihood from incomplete data via the {EM} algorithm},
-  journal = {Journal of the Royal Statistical Society, Series B},
-  year = {1977},
-  volume = {39},
-  pages = {1--38},
-  number = {1}
-}
-
-@ARTICLE{Genberget08,
-  author = {Genberg, B. L. and Kulich, M. and Kawichai, S. and Modiba, P. and
-	Chingono, A. and Kilonzo, G. P. and Richter, L. and Pettifor, A.
-	and Sweat, M. and Celentano, D. D.},
-  title = {{HIV} risk behaviors in Sub-{S}aharan {A}frica and {N}orthern {T}hailand:
-	{B}aseline behavioral data from project {A}ccept},
-  journal = {Journal of Acquired Immune Deficiency Syndrome},
-  year = {2008},
-  volume = {49},
-  pages = {309--319}
-}
-
-@ARTICLE{KaplanMeier58,
-  author = {Kaplan, E. L. and Meier, P.},
-  title = {Nonparametric estimation from incomplete observations},
-  journal = {Journal of the American Statistical Association},
-  year = {1958},
-  volume = {53},
-  pages = {457--481},
-  number = {282}
-}
-
-@BOOK{LehmannCasella98,
-  title = {Theory of Point Estimation},
-  publisher = {Springer-Verlag},
-  year = {1998},
-  author = {Lehmann, E. L. and Casella, G.},
-  address = {New York},
-  series = {{S}econd {E}dition},
-  isbn = {0-387-98502-6}
+@article{DBLP:journals/corr/abs-1204-2131,
+  author       = {Michael Rink},
+  title        = {On Thresholds for the Appearance of 2-cores in Mixed Hypergraphs},
+  journal      = {CoRR},
+  volume       = {abs/1204.2131},
+  year         = {2012},
+  url          = {http://arxiv.org/abs/1204.2131},
+  eprinttype    = {arXiv},
+  eprint       = {1204.2131},
+  timestamp    = {Mon, 13 Aug 2018 16:47:12 +0200},
+  biburl       = {https://dblp.org/rec/journals/corr/abs-1204-2131.bib},
+  bibsource    = {dblp computer science bibliography, https://dblp.org}
 }
 
 @misc{Generics1,
     key = {Generics},
     note = {learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/generics-in-the-run-time}
 }
-
-@misc{ ExpressDebug,
-    key = {Express Debug},
-    note = {https://learn.microsoft.com/en-us/dotnet/csharp/advanced-topics/expression-trees/debugging-expression-trees-in-visual-studio}
-}
-@ARTICLE{Student08,
-  author = {Student},
-  title = {On the probable error of the mean},
-  journal = {Biometrika},
-  year = {1908},
-  volume = {6},
-  pages = {1-25}
-}
-
-@article{Moley,
-    author = ,
-    title = 
-    journal = ,
-    year = 
-}
-
-@book{arora2006computational,
-  author = {Arora, S. and Barak, B.},
-  biburl = {https://www.bibsonomy.org/bibtex/29e14d7a20ce00ed47c48dde9e4528345/jaeschke},
-  isbn = {978-0-521-42426-4},
-  keywords = {algorithm complexity computing ddm mk3.3},
-  publisher = {Cambridge University Press},
-  title = {Computational Complexity: A Modern Approach},
-  year = {2006},
-    pages =
-}
-
-@misc{cheb,
-    key = {},
-    note = {https://en.wikipedia.org/wiki/Chebyshev%27s_inequality}
-}
-

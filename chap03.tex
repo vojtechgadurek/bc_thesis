@@ -5,18 +5,18 @@ It is important to state our goals and what to optimize regarding software devel
 
 These two often do not come hand in hand, but we were willing to pay with speed and ease of development.
 
-As such, C\# was chosen as the main language of development. This may sound like a weird choice when our priority is speed, as C\# is limited by being Just In Time compiled language. As we show later, dotnet and its features (mainly Roslyn and it being Compiler as Service) actually allowed us to perform great optimizations. 
+As such, C\# was chosen as the main language of development. This may sound like a weird choice when our priority is speed, as C\# is limited by being Just In Time compiled language. As we show later, dotnet and its features (mainly Roslyn and Compiler as Service) allowed us to perform great optimizations. 
 
 
 \section{Architecture}
-There are three main independent parts of the project. The first is an implementation of fast hashing functions suited for this project. The second is a fasta file reader, which can read .fasta files. The third part is the SymmetricDifferenceFinder, which finds the symmetric difference of some sets.
+The project has three main independent parts. The first is an implementation of fast hashing functions suited for this project. The second is a fasta file reader, which can read .fasta files. The third part is the SymmetricDifferenceFinder, which finds the symmetric difference of some sets.
 
 
 \section{}
 
-\section{Hashing Functions}
+\section{Hash Functions}
 
-As usual, we first state what requirements we want from the implementation of hashing functions. We are looking for the implementation of hashing functions $f: long \rightarrow ulong$, which works reasonably well with our algorithms for finding symmetric differences as fast as possible and is maintainable. Also we are not looking for one hashing function, we would like to get at least three.
+As usual, we first state what requirements we want from the implementation of hashing functions. We are looking for the implementation of hash functions $f: long \rightarrow ulong$, which works reasonably well with our algorithms for finding symmetric differences as fast as possible and is maintainable. Also we are not looking for one hashing function, we would like to get at least three.
 
 The simplest solution to this problem is to use some existing library. These exist, but they do not offer hashing functions from ulong to ulong and mostly work on byte arrays; as such, these implementations are slow and not feasible for our project.
 

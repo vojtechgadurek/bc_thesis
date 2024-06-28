@@ -1,22 +1,21 @@
 \chapter{SymmetricDifferenceFinder}
 
 \section{Motivation}
-We aimed to develop a library to test different approaches to solve set recovery problems. We decided we would like performance and modifiability, even at the cost of speed and ease of development. Performance is essential because the expected use case may deal with massive data sets.  We need modifiability to be able to change or replace some components easily.
+We aimed to develop a library to test different approaches for solving set recovery problems, especially finding symmetric differences between two sets. We decided we would like both performance and modifiability, even at the cost of speed and ease of development. Performance is essential because the expected use case may deal with massive datasets. We need modifiability to be able to change or replace components easily.
 
 \section{Overview}
-SymmetricDifferenceFinder is our project's core library. It is a small framework for building solutions to the set recovery problem. It allows users to easily modify or replace many of its components and parts, allowing them to test different approaches without repeating themselves.  
+SymmetricDifferenceFinder is our project's core library. It is a small framework for building solutions to the set recovery problem. 
+We will now do a little tour to introduce potential users to the library. The most important concept is a Sketch. One should imagine a sketch as some magic set and some operations with them. These operations may be Toggle(key) (adds the key if the key is not in the sketch; otherwise, removes the key) or a combination of Add(key) and Remove(key). 
 
-\subsection{Encoding-Decoding Pipeline}
-There are two main phases: encoding and decoding. During encoding, we encode our data using some small sketches. There should be one sketch for each set. During decoding, we first take sketches of sets we want to find symmetric differences, merge them, and then run a decoding algorithm on the result of merging. This step may fail. If it fails, we then need to change the parameters and rerun the algorithm from the start.
+When we add some value to the sketch, we should imagine this value being there. However, we do not have access to it. If we remove it, it stops being 
+in the Sketch. 
 
-\subsection{Sketch/Table}
-The most important thing is to choose a Sketch/Table to use. We first make a little detour into the difference between Tables and Sketches. Tables are used for encoding, and Sketches are utilized for decoding. Most implementations may be the same, but the library's architecture allows the implementation of different Sketches for the same Table.
+Our implementation of Sketches is a little more low-level. We are 
+I will assume this magical set is a set of buckets, and we may access these buckets by keys. This means the general interface is Toggle(index, key).
 
-If not said explicitly, we will use Sketch with the meaning of both Table and Sketch.
+For some purposes, it may be useful to implement just the $Add(index, key)$; we call those Tables.
 
-One should view Sketch as an array with overloaded methods to "add" and "remove" items.
-
-This is, for example, an ITable interface. Encoding relies on eveSketchtch to implement this interface. 
+For example Tables implement this interface:
 \begin{lstlisting}
 public interface ITable
 {
@@ -25,8 +24,13 @@ public interface ITable
 }
 \end{lstlisting}
 
-\subsection{Hashing Functions}
-Hashing functions are used in both phases. One must use the same set hashing function for encoding and decoding. This set is expected to implement IEnumerable<Expression<Func<ulong, ulong> > interface. This may, for example, be a List<Expression<Func<ulong, ulong> >. Order is not important. Some basic hashing functions are provided by the FlashHash library. One can also implement their own.
+Sketches should also implement a method for finding symmetric differences between the items they hold and other sketches of the same type. This is important as not all sketches may be compatible.
+
+\subsection{Encoding-Decoding Pipeline}
+There are two main phases: encoding and decoding. During encoding, we encode the values to the sketches. There should be one sketch for each set. During decoding, we first take sketches of sets we want to find symmetric differences, merge them, and then run a decoding algorithm on the result of merging. This step may fail. If it fails, we then need to change the parameters (mostly the size of the table or use some better decoding method if available for the data we have) and rerun the algorithm from the start.
+
+\subsection{Hash Functions}
+Hash functions are used in both phases. One must use the same set hashing function for encoding and decoding. This set is expected to implement IEnumerable<Expression<Func<ulong, ulong> > interface. This may, for example, be a List<Expression<Func<ulong, ulong> >. Order is not important. Some basic hashing functions are provided by the FlashHash library. One can also implement their own.
 
 \subsection{Encoder}
 Encoders are used in the encoding phase. There are two implementations of Encoders: Encoder<TTable> and NoConflictEncoder<TTable>. TTable has to implement an ITable interface and be a value type (this is to get inline). NoConflictEncoders expect that no two hashing functions that have intersecting ranges exist. There are two possible interfaces for implementing IEncoder and IParralelEncoder.
@@ -38,13 +42,14 @@ Decoders are used in the decoding phase. They should be given a sketch and then 
 HPWDecoder is based on the HPW algorithm. It allows the removal of items that are not present in the set or that are not going to be preset after the encoding ends. Due to its nature, it cannot distinguish whether some element in the symmetric difference of sets $A$ and $B$ was an element of $A$ or an element of $B$.
 
 \subsection{HyperGraphDecoder}
-It uses a [algorithm] to find the largest $2$ core of the hypergraph. In its base version, it cannot remove items that are not present in the sketch or that will be present. We also implemented an improved version of such an algorithm, that supports such operations. 
+It uses a [algorithm] to find the largest $2$ core of the hypergraph. In its base version, it cannot remove items that are not present in the sketch or that will be present. We also implemented an improved version of such an algorithm that supports such operations. 
 
-\subsection{Massagers}
-Massagers try to take a Decoder in an unrecoverable state and shake little with the data to increase recoverability. Their work only on some data. We need to guess some items, possibly present in the symmetric difference, from already decoded keys. They are especially useful when only a few items remain undecoded. Their effectiveness depends largely on how good our guesses are.
+\subsection{Decoders with oracles}
+Decoders with oracles are useful if one can guess the existence of some other keys in a sketch from the already decoded ones. Our algorithm expects that such data form an ordered graph. Currently, these methods are provided only for HPWDecoder, and such an oracle needs to conform to IStringFactory and be a structure.
+They are especially useful when only a few items remain undecoded. Their effectiveness depends largely on how good our guesses are. However, they are currently more of an experimental feature with a very limited API.
 
 \subsection{Data sources}
-The library implements multiple possible data sources. RedaFasta may be used to provide a Fasta file as a data source, and multiple random data generators are available for testing purposes.
+The library implements multiple possible data sources. RedaFasta may be used to provide a MaskedSuperString file as a data source, and multiple random data generators are available for testing purposes.
 
 \subsection{Testing}
 One can also find some useful tools for writing TODO.
@@ -132,7 +137,8 @@ var reader = new FastaFileReader(
 //Some instances implementing the IEncoder interface
 IEncoder encoder;
 
-//It may be a good idea to set the buffer to some size that is large enough
+//It may be a good idea to set the buffer to some size 
+//that is large enough
 var buffer = new ulong[1024 * 1024];
 while (true)
 {
@@ -256,9 +262,22 @@ decoder.GetDecodedValues()
 \end{lstlisting}
 
 \section{Buffers size}
-Buffer sizes: Todo
-Optimize the right size of buffers
+The size of buffers may influence performance greatly, especially when using the RedaFasta library to read MaskedSuperString files. Something between  $1024 \cdot 16$ and $1024 \cdot 1024$ is optimal for our machine. The work with buffers may be parallized via Tasks to small sizes of buffers that may lead to too large overhead for calling those. For encoders, a number of partitions may be set by calling SetPartitions(int n).
 
+\begin{lstlisting}
+Encoder encoder = ...;
+//Changes the number of partitions to 8 
+encoder.SetPartions(8);
+\end{lstlisting}
+
+We wrote some basic benchmarks that may be modified to find the optimal parameter setting for concrete machines. However, they were not meant for this purpose in the first place, and some work is to be done.
 
 \section{Future Work} 
-    
+
+We would like to write a console application using this library to find Symmetric Differences between files and, more exactly, MaskedSuperString files to provide a more seamless experience for possible users with no need to build their own Symmetric Difference Finder.
+
+Writing code with LittleSharp is still an unpleasant experience. However, we think it is much better than writing code just with Expression Tree. There is a lot of potential for improving LittleSharp and, with it, the overall readability of the code written using LittleSharp.
+
+The abstraction is currently a little bit problematic as it supports only symmetric differences, but IBLT may support a finding in which set each element lies. This would allow Oracle decoders to write using  IBLT. 
+
+Oracle Decoders are very experimental features, and they would benefit greatly from fewer random constants in the code and greater parametricity. In simple words, some refactoring is required.

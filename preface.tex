@@ -1,36 +1,53 @@
 \chapter*{Introduction}
 \addcontentsline{toc}{chapter}{Introduction}
 
-Advances in technology in the last decade led to huge accumulation of data. 
-This have created need for algorithms able to work with large data in small memory. 
-In our work we focus on the problem of finding the symmetric difference of two large sets, 
-than differs only in a small number of elements. 
+\section*{Motivation}
 
-\section*{Algorithms}
+Advances in technology in the last decade led to a huge accumulation of data. 
+This has created the need for algorithms that can work with large data in small memory. 
+In our work, we focus on the problem of finding the symmetric difference of two large sets 
+that differ only in a small number of elements. 
+Finding the symmetric difference between two sets may have many applications 
+from keeping instances of distributed databases in sync to comparing closely related genomes.
 
-The state of art to solution to such problem is 
-to use a Invertible Bloom Lookup Table (IBLT). This data structure is very close to a hashtable.
+\section*{Basic Aproach}
+The state of art to solution to such a problem is 
+to use an Invertible Bloom Lookup Table (IBLT). This data structure is very close to a hashtable.
 It differs mainly in the way how it deals with collisions. It just adds the values of the colliding keys and keeps the count of keys in each bucket.
-This means when some item is added to the IBLT and then removed, the IBLT will be same as IBLT where these two operations were not performed.
-This property is very useful in our case, because we can add all elements from the first set to the IBLT and then remove all elements from the second set. An only items 
-in the difference had influence on the IBLT. We than may try to recover the difference from the IBLT, returning all values in buckets where only one key was hashed.
-There comes another crucial difference. IBLT is that we do not use one hash function but $k$. So, each key is stored in $k$ buckets. 
-Improving a probability a no two keys are hashed into same buckets.
-We may use such structure for finding the symmetric difference of two sets in linear space to the size of the difference.
-The authors NAME build up on the IBLT and proposed a new data structure improving the space consumed by a constant. 
-Their improvement lies in replacing summation of values in the buckets with a XOR operation and not keeping the count of keys in the buckets.
-This may lead to recovery of keys not in the difference, but the authors successfully showed such event does not happen with high probability.
+This means that when an item is added to the table and then removed, the table will be the same as the table without these two operations.
+This property is very useful in our case because we can add all elements from the first set to the table and then remove all elements from the second set; only items in the difference influence the table. We then may try to recover the difference from the table, returning all values in buckets where only one key was hashed. This, however, leads to some keys being unrecovered if multiple keys were hashed to the same bucket.
+Another crucial difference in the table is that we do not use one hash function but $k$. So, each key is stored in $k$ buckets. 
+Improving the probability no two keys are hashed into the same buckets.
+We may use such a structure to find the symmetric difference of two sets in linear space according to the size of the difference.
+The authors Houen, Pagh and Waltzer built on the IBLT and proposed a new data structure that improves the space consumed by a constant. \cite{doi:10.1137/1.9781611977585.ch21} 
+Their improvement lies in replacing the summation of values in the buckets with an XOR operation and not keeping the count of keys in the buckets.
+This may lead to the recovery of keys, not in the difference, but the authors successfully showed such an event does not happen with high probability.
 
-Both structures success depend heavily on the probability of existence of $k$-cores in random $k$-uniform hypergraphs depending on ratio number of edges and vertices. This comes from the fact, we may look on buckets as vertices 
-and hashes of keys as edges. The ratio number of vertices to number of edges for which no $2$-core exists
- in random $k$-uniform hypergraph with high probability is know for any $k$ and the highest possible is $1$:$0.8$ for $k = 3$.
-However, improvements may be gained by on non uniform hypergraphs as shown in the work WORK.
+\section*{Improvements}
 
+\subsection*{Non-uniformity}
+Both structure's success depends heavily on the probability of the existence of $k$-cores in random $k$-uniform hypergraphs depending on the ratio number of edges and vertices. This comes from the fact we may look at buckets as vertices 
+and hashes of keys as edges. The ratio number of vertices to the number of edges for which no $2$-core exists
+ in a random $k$-uniform hypergraph with high probability is known for any $k$, and the highest possible is $1$:$0.8$ for $k = 3$.\cite{DBLP:conf/soda/Molloy04}
+However, improvements may be gained on non-uniform hypergraphs, as shown in the work of Rink\cite{DBLP:journals/corr/abs-1204-2131}. One should, however, note that algorithms relying solely upon 
+the non-existence of $k$-cores in random hypergraphs has a theoretical bound of $1$:$1$ ratio.
 
-We implemented the IBLT and compared with a improved version of such algorithm by the authors NAMES. We tested the algorithms for different familes of hash function.
-As we expected the common usecase of our implementation is 
+\subsection*{Recovery with oracle}
+One main use case of the algorithm is in Bioinformatics, where finding a symmetric difference between two $k$-mer sets is useful. 
+We were able to use the fact that data in such sets are not entirely random, and from the existence of some $k$-mer, we may infer the existence of other $k$-mers. We called such a process a recovery with 
+an oracle. With this, we beat the theoretical bound of $1$:$1$ ratio by the ratio $1$:$1.25$ [TODO: check the number] for $31$-mers sets. We found this value experimentally.
+We found that sets compromised of sequences of numbers can be recovered, with the ratio up to $1$:$1.7$.
 
+\section*{Implemenation}
+We expected a typical use case to be run on large data, therefore we highly prioritized performance. By combining low-level optimization and parallelism, we achieved a speed of 130 million encoded $k$-mers per second on $4$ cores with $32GB$ of RAM. 
 
-Finding symmetric difference of two sets may have many applications from keeping instances of distributed databases in sync to comparing closely related genomes.
+However, we also made the library highly modular, allowing users to replace each part easily. Our main and only programming language was C\#. We used its runtime code generation features extensively, namely Expression Trees. 
 
+We use them in our custom-made library, FlashHash, which provides access to any number of hash functions from two hash function families. These hash functions are compiled during runtime for better performance.
 
+Working with Expression Trees may be tedious and cumbersome. As such, we developed a small library—LittleSharp—to make working with them more enjoyable and safe. It provides a reasonable type of safety, making many otherwise runtime errors a compile-time error.
+
+Lastly we implemented a library for reading superstrings of kmers called RedaFasta. 
+\section*{Other Results}
+//TO DO porovnani IBLT a HWP
+//Vysledky toho jestli menit hashovaci funkce je zajimave

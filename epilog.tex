@@ -1,2 +1,14 @@
 \chapter*{Conclusion}
 \addcontentsline{toc}{chapter}{Conclusion}
+
+\section*{Improvements}
+We increased the recovery ratio from $1$:$0.8$ to $1$:$1.25$ for the recovery of $k$-mer sets. We achieved a better ratio of $1$:$1.7$ for number sequences. Therefore, we ask whether it is possible to improve the ratio for $k$-mer sets to be closer to the ratio of recovery of number sequences. This may be done by improving the prediction of the oracle.
+Improving recovery heuristics with oracle may yield increases in the recovery ratio or make the recovery faster.
+Another avenue for further research could be to find rigorous bounds on such decoding. However, we fear such an endeavor may not be easy.
+The ratio could be improved by using a non-uniform number of hash functions.
+
+
+
+\section*{Implementation}
+In the chapters dedicated to each library, we further discussed possible work on it. During the project, we met and fought successfully with the language's limitations. The main issue is the lack of support for recompiling functions for some known parameters. For example have a generic $Divide(a,b) = a / b$, if we would want many operations for the same $b:=7$, we would maybe want to recompile such function by calling $Divide(a) = Recompile(Divide, b = 7)$ during runtime we could. We circumvented that by using Expression Trees; however, this is far from a pleasant experience. 
+
