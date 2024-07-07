@@ -7,36 +7,22 @@ Advances in technology in the last decade led to a huge accumulation of data.
 This has created the need for algorithms that can work with large data in small memory. 
 In our work, we focus on the problem of finding the symmetric difference of two large sets 
 that differ only in a small number of elements. 
-Finding the symmetric difference between two sets may have many applications 
+Finding the symmetric difference between two sets has many applications 
 from keeping instances of distributed databases in sync to comparing closely related genomes.
 
 \section*{Basic Aproach}
-The state of art to solution to such a problem is 
+The state of the art to solution to such a problem is 
 to use an Invertible Bloom Lookup Table (IBLT). This data structure is very close to a hashtable.
 It differs mainly in the way how it deals with collisions. It just adds the values of the colliding keys and keeps the count of keys in each bucket.
 This means that when an item is added to the table and then removed, the table will be the same as the table without these two operations.
-This property is very useful in our case because we can add all elements from the first set to the table and then remove all elements from the second set; only items in the difference influence the table. We then may try to recover the difference from the table, returning all values in buckets where only one key was hashed. This, however, leads to some keys being unrecovered if multiple keys were hashed to the same bucket.
-Another crucial difference in the table is that we do not use one hash function but $k$. So, each key is stored in $k$ buckets. 
-Improving the probability no two keys are hashed into the same buckets.
-We may use such a structure to find the symmetric difference of two sets in linear space according to the size of the difference.
+This property is very useful in our case because we can add all elements from the first set to the table and then remove all elements from the second set; only the items in the difference remain in the table. We then may try to recover the difference from the table, returning all values in buckets where only one key was hashed. This, however, leads to some keys being unrecovered if multiple keys were hashed to the same bucket.
+Another crucial difference in the table is that we do not use one hash function but $k$, for example $k=3$. So, each key is stored in $k$ buckets, 
+improving the probability no two keys are hashed into the same buckets.
+We may use such a structure to find the symmetric difference of two sets in space linear in the size of the difference.
 The authors Houen, Pagh and Waltzer built on the IBLT and proposed a new data structure that improves the space consumed by a constant. \cite{doi:10.1137/1.9781611977585.ch21} 
-Their improvement lies in replacing the summation of values in the buckets with an XOR operation and not keeping the count of keys in the buckets.
+Their improvement lies in replacing the summation of values in the buckets with the XOR operation and not keeping the count of keys in the buckets.
 This may lead to the recovery of keys, not in the difference, but the authors successfully showed such an event does not happen with high probability.
 
-\section*{Improvements}
-
-\subsection*{Non-uniformity}
-Both structure's success depends heavily on the probability of the existence of $k$-cores in random $k$-uniform hypergraphs depending on the ratio number of edges and vertices. This comes from the fact we may look at buckets as vertices 
-and hashes of keys as edges. The ratio number of vertices to the number of edges for which no $2$-core exists
- in a random $k$-uniform hypergraph with high probability is known for any $k$, and the highest possible is $1$:$0.8$ for $k = 3$.\cite{DBLP:conf/soda/Molloy04}
-However, improvements may be gained on non-uniform hypergraphs, as shown in the work of Rink\cite{DBLP:journals/corr/abs-1204-2131}. One should, however, note that algorithms relying solely upon 
-the non-existence of $k$-cores in random hypergraphs has a theoretical bound of $1$:$1$ ratio.
-
-\subsection*{Recovery with oracle}
-One main use case of the algorithm is in Bioinformatics, where finding a symmetric difference between two $k$-mer sets is useful. 
-We were able to use the fact that data in such sets are not entirely random, and from the existence of some $k$-mer, we may infer the existence of other $k$-mers. We called such a process a recovery with 
-an oracle. With this, we beat the theoretical bound of $1$:$1$ ratio by the ratio $1$:$1.25$ [TODO: check the number] for $31$-mers sets. We found this value experimentally.
-We found that sets compromised of sequences of numbers can be recovered, with the ratio up to $1$:$1.7$.
 
 \section*{Implemenation}
 We expected a typical use case to be run on large data, therefore we highly prioritized performance. By combining low-level optimization and parallelism, we achieved a speed of 130 million encoded $k$-mers per second on $4$ cores with $32GB$ of RAM. 
@@ -48,6 +34,16 @@ We use them in our custom-made library, FlashHash, which provides access to any 
 Working with Expression Trees may be tedious and cumbersome. As such, we developed a small library—LittleSharp—to make working with them more enjoyable and safe. It provides a reasonable type of safety, making many otherwise runtime errors a compile-time error.
 
 Lastly we implemented a library for reading superstrings of kmers called RedaFasta. 
-\section*{Other Results}
-//TO DO porovnani IBLT a HWP
-//Vysledky toho jestli menit hashovaci funkce je zajimave
+
+\section*{Improvements}
+
+\subsection*{Recovery with oracle}
+In Bioinformatics, one often work with $k$-mer sets instead of DNA strings. $k$-mer is DNA substring of lenght $k$. Finding symmetric difference of two $k$-mer sets is useful for useful for closness of different species. 
+We were able to use the fact that data in such sets are not entirely random, and from the existence of some $k$-mer, we may infer the existence of other $k$-mers. We called such a process a recovery with 
+an oracle. With this, we beat the theoretical bound of $1$:$1$ ratio by the ratio $1$:$1.25$ [TODO: check the number] for $31$-mer sets. We found this value experimentally.
+We found that sets compromised of sequences of numbers can be recovered, with the ratio up to $1$:$1.7$.
+
+
+
+\section*{Other results}
+We found that different hash function family bring significantly influence recovery and performance. We found, that Multiply Shift leads to better recovery ratio than Linear Congruence of $1:0.78$ to $1:0.80$. However this is at the cost of time as it is up to $20$ times slower.  

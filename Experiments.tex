@@ -9,3 +9,39 @@ Choosing a right hash f
 \section{Test massagers}
 -ciselne rady
 -kmery
+
+\chapter{Experimets}
+
+\section{Data}
+
+
+\section{Comparison of hash function}
+There are many families of hash functions. We decided to test two: Linear Congruence and MultiplyShift.
+We tested booth hash functions for both recovery algoritm. We set a fixed size of number of buckets andand changed the elements hashed.
+
+\section{}
+-compare algorythms
+
+\section{Decoding with oracle}
+HPW and IBLT algorithms have one inherent problem due to their nature is not possible to get better raratio of bucket to size of symetric difference than 1. 
+
+We first start by example from real world. Imagine going to supermarket and buing $bread$, $ham$ and $butter$.
+
+For some reason you decide encode all the items using HPW algorithm to some sketch, we set the number oof hash function to $2$. 
+The resulting sketch looks likes this [\{bread}, \{bread, ham, butter\}, \{butter, ham\}]. After some time, we decide to recover items from the sketch. We first find recover bread, after such we are stuck. As we got a 2-core. However we remeberer, that we offten buy cheese with bread. We thus toggle cheese into the sketch. If we try decoding again we see no iprovement as such, we toggle out the cheese. Now, we try ham. As ham was in the sketch, we broke the existing 2-core and decode ham. Now, we succesfully recovered the whole sketch.
+
+This is very close to our aproach. We utilize a oracle which is able from some element $a$ recomend some set $A$ of elements, that are probably in the sketch if $a$ is in the sketch. The algorithm looks like this:
+
+
+Good domain for such testing are k-mer sets. When $AATT$ is in the set, than one of $ATTA$, $ATTT$, $ATTC$ or $ATTG$ are with high probability also in the set. 
+One may imagine, that we work with a graph, where k-mers are vertices and edges exists between k-mers, that share at least {k-1} substring. This graph is going to be souvisly for every dna string. Howeever for.
+
+Graph 
+This is also going to be nealry true for symteric difference of k-mer sets. 
+
+We are going to create a synetize data
+
+We try to beat such bound but assuming, that ocurence of some data is not entirely inpendant. This behaviour is natural for many domains. For example, someone buing a bread is probaly going to buy also butter and ham or cheese. However it may hard to guess, that someone also bought a socks.  
+
+Imagine encoding same set $A$ using HWP algorithm, when one is unlucky the sketch may be unrecoverable.However we were able to decode element $a$, this can be possible bread from the previous example. We may guess, that butter is also is 
+

@@ -36,6 +36,9 @@ var f = CompiledFunction
     .Create<int[], int, int>(out var B_, out var N_);
 f.S.DeclareVariable(out var i_, 0)
     //We declared variable i with value 0 of type int
+    //It is possible to declare variable without explicit
+    //initialization, however this is not recomended as
+    //it may lead to unexpected behaviour
     .While(
         i_.V < N.V, 
         new Scope()
@@ -208,7 +211,8 @@ Scopes may or may not have a return value.
 \section{Future work}
 This library is mostly experimental and serves more as a glimpse into a concept than a fully functional library. This makes sense as it was a side project created out of a need for better API for Expression Trees. 
 
-There is some technical debt in architecture. The main problem is that when a Scope cannot be added as a Scope to another Scope, it needs to be made a SmartExpression first, which is problematic as it makes analyzing such code much harder. To solve this problem, decupling scope trees from expression trees could be a good idea.
+There is some technical debt in architecture. The main problem is that when a Scope cannot be added as a Scope to another Scope, it needs to be made a SmartExpression first, which is problematic as it makes analyzing such code much harder. The solution to this problem is decupling compilation from expression trees via visitor pattern.
 
 LittleSharp would benefit enormously from using Roslyn more extensively, especially source generators and analyzers, to build a less error-prone experience. Analyzers could be used to write custom compile errors, thus helping users debug code written using SmartExpression better. Code Generators could be used to create a more advanced type system supporting custom types.
+
 
