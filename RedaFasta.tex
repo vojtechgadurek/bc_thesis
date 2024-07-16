@@ -1,16 +1,6 @@
-\chapter{RedaFasta}
+\chapter{RedaFasta}\label{RedaFasta}
 \section{Motivation}
-Our goal is to write a reader of FASTA files that does not cause bottlenecks to our main algorithm. As such, it needs to be reasonably fast. We are willing to sacrifice genericity for performance. 
-
-\section{Preliminaries}
-\subsection{DNA and kMers}
-For our purposes, one may imagine DNA as a string of four letters: A, C, G, and T. Two and two form pairs, this being A with T and C with G. To every DNA string $S$, there exists its complement $C$. This complement may be obtained by first replacing all letters with the other letter in pairs and then reversing the string. This means "AAAT" has a complement "ATTT".
-
-DNA strings may be long, and getting them may be hard. As such, we often work on sets of kMer. kMer is a substring of length $k$. Similarly, as DNA has a complement, kMers also have complements. We would sometimes need to have just one representation of kMer; thus, we would define a canonical kMer as being lower in lexicographical ordering.
-
-\subsection{Fasta Files}
-
-When we have a set of keys, it is k-times more expensive to store them than storing a DNA string. The problem is that building DNA from set of kMer is hard. Thus fasta file format is used. On the first line of the file is configuration, and on the next line is the "DNA" string, but its letter may be upper or lower. Then, the kMer set stored is equal to all substrings of such "DNA" string beginning with an upper symbol. 
+Our goal is to write a reader of Masked Supestrings files that does not cause bottlenecks to our main algorithm. As such, it needs to be reasonably fast. We are willing to sacrifice genericity for performance. The library is on GitHub \url{https://github.com/vojtechgadurek/RedaFasta}. 
 
 \section{How to use}
 The library provides two classes, FastaFile and FastaFileReader. FastaFile serves to initialize and recover configurations from FASTA files. FastaFileReader is the main class doing all reading, buffering, and parsing kmers.

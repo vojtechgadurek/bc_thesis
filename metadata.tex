@@ -15,53 +15,48 @@
 
 % Thesis title in English (exactly as in the official assignment)
 % (Note: \xxx is a "ToDo label" which makes the unfilled visible. Remove it.)
-\def\ThesisTitle{\xxx{Thesis title}}
+\def\ThesisTitle{Data Structures for Sketching Dynamic Sets}
 
 % Author of the thesis (you)
-\def\ThesisAuthor{\xxx{Name Surname}}
+\def\ThesisAuthor{Vojtěch Gaďurek}
 
 % Year when the thesis is submitted
-\def\YearSubmitted{\xxx{YEAR}}
+\def\YearSubmitted{2024}
 
 % Name of the department or institute, where the work was officially assigned
 % (according to the Organizational Structure of MFF UK in English,
 % see https://www.mff.cuni.cz/en/faculty/organizational-structure,
 % or a full name of a department outside MFF)
-\def\Department{\xxx{Name of the department}}
+\def\Department{Computer Science Institute of Charles University}
 
 % Is it a department (katedra), or an institute (ústav)?
-\def\DeptType{\xxx{Department}}
+\def\DeptType{Institute}
 
 % Thesis supervisor: name, surname and titles
-\def\Supervisor{\xxx{Supername Supersurname}}
+\def\Supervisor{Pavel, Veselý, Mgr. Ph.D.}
 
 % Supervisor's department (again according to Organizational structure of MFF)
-\def\SupervisorsDepartment{\xxx{department}}
+\def\SupervisorsDepartment{Computer Science Institute of Charles University}
 
 % Study programme (does not apply to rigorosum theses)
-\def\StudyProgramme{\xxx{study programme}}
+\def\StudyProgramme{Computer Science}
 
 % An optional dedication: you can thank whomever you wish (your supervisor,
 % consultant, who provided you with tea and pizza, etc.)
 \def\Dedication{%
-\xxx{Dedication.}
+I want to thank all who were helpful namely Mgr. Jiří Beneš, Mgr. Radek Zikmund, especially my supervisor, Mgr. Pavel Veselý, Ph.D. for all he has done and all the consultations he provided. I am very glad to have him behind my back.
+
+We used AI tools quite extensively in this project. We primarily used them to refractor, transform, or rewrite already-written text or code. We have not primarily used AI for idea generation. The tools we used were ChatGPT, Grammarly, and GitHub Copilot. This list is not enumerative and specifies only the most used.
 }
 
 % Abstract (recommended length around 80-200 words; this is not a copy of your thesis assignment!)
 \def\Abstract{%
-\xxx{Use the most precise, shortest sentences that state what problem the
-thesis addresses, how it is approached, pinpoint the exact result achieved, and
-describe the applications and significance of the results. Highlight anything
-novel that was discovered or improved by the thesis. Maximum length is 200
-words, but try to fit into 120. Abstracts are often used for deciding if
-a reviewer will be suitable for the thesis; a well-written abstract thus
-increases the probability of getting a reviewer who will like the thesis.}
-}
+Our work explores algorithms for finding the symmetric differences between two large sets that differ only in a few elements. We focus on performance and modularity from an implementation perspective and memory complexity from an algorithmic perspective. We achieved fast and modular code using advanced C\# features, mainly expression trees, allowing us to achieve update speeds of $152$ MOp/s $k$. We compared different hash functions, finding tabulation to have the best properties for recovery.  Finally, the algorithms were applied to structured data, improving the ratio of the memory size to the number of elements in the difference from $1$:$0.8$ to $1$:$1.5$ for $k$-mers.}
 
 % 3 to 5 keywords (recommended) separated by \sep
 % Keywords are useful for indexing and searching for the theses by topic.
 \def\ThesisKeywords{%
-\xxx{keyword\sep key phrase}
+Set Recovery, Expression trees, Bloom Filters, k-mers 
 }
 
 % If any of your metadata strings contains TeX macros, you need to provide
@@ -80,16 +75,16 @@ increases the probability of getting a reviewer who will like the thesis.}
 % If you are studing in a Czech programme, you also need to provide metadata in Czech:
 % (in English programmes, this is not used anywhere)
 
-\def\ThesisTitleCS{\xxx{Název práce česky}}
-\def\DepartmentCS{\xxx{Název katedry česky}}
-\def\DeptTypeCS{\xxx{Katedra}}
-\def\SupervisorsDepartmentCS{\xxx{katedra vedoucího}}
-\def\StudyProgrammeCS{\xxx{studijní program}}
+\def\ThesisTitleCS{Datové struktury pro sketching dynamických množin}
+\def\DepartmentCS{Informatický ústav Univerzity Karlovy}
+\def\DeptTypeCS{Ústav}
+\def\SupervisorsDepartmentCS{Informatický ústav Univerzity Karlovy}
+\def\StudyProgrammeCS{Informatika}
 
 \def\ThesisKeywordsCS{%
-\xxx{klíčová slova\sep klíčové fráze}
+Rekontrukce množiny, Expression trees, Bloomovy Filtry, k-mery 
 }
 
-\def\AbstractCS{%
-\xxx{Abstrakt práce přeložte také do češtiny.}
+\def\AbstractCS{
+Naše práce se zabývá algoritmy pro nalezení symetrických rozdílů mezi dvěma velkými množinami, které se liší pouze v několika prvcích. Zaměřujeme se na výkon a modularitu z hlediska implementace a paměťovou složitost z hlediska algoritmů. Rychlého a modulárního kódu jsme dosáhli pomocí pokročilých funkcí C\#, zejména Expression trees, což nám umožnilo dosáhnout rychlosti aktualizace $152$ MOp/s $k$. Porovnali jsme různé hashovací funkce. Nakonec byly algoritmy aplikovány na strukturovaná data, což zlepšilo poměr velikosti paměti k počtu prvků v rozdílu z $1$:$0.8$ na $1$:$1.5$ pro $k$-mery.
 }

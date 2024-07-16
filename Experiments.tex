@@ -1,47 +1,572 @@
 \chapter{Experimets}
 
-\section{Compare hash function}
-Choosing a right hash f
+\section{Comparison of Hash Functions}
+We decided to compare different hash function families and their effect on the recovery of IBLT and HPW algorithms. All tests were run for a sketch size of $10000$; tests started at the ratio buckets: items of $1$:$0.72$ and ended with ratio $1$:$0.85$. We chose a step of $0.001$ and ran $100$ tests for each ratio. The data encoded were random $k$-mer strings more troughtfully described in the section \ref{dec_oracle}.
 
-\section{}
--compare algorythms
+We look at the graph comparing all possible combinations together Graph\ref{fig: graph_recovery}. We should see three groups: the worst is polynomial hashing, then linear hashing, and the last group comprises tabulation and multiply-shift.  We may clearly see that there is no or little difference between HPW and IBLT algorithms. This is not very surprising as both rely on the same bound of the probability of the existence of $2$-core in the random $3$-universal hypergraph. 
 
-\section{Test massagers}
--ciselne rady
--kmery
-
-\chapter{Experimets}
-
-\section{Data}
+However, what is interesting is that polynomial hashing of order $2$ is weaker than Linear Congruence. We have no explanation for this behavior; exploration on a more diverse data should probably be done. 
 
 
-\section{Comparison of hash function}
-There are many families of hash functions. We decided to test two: Linear Congruence and MultiplyShift.
-We tested booth hash functions for both recovery algoritm. We set a fixed size of number of buckets andand changed the elements hashed.
+\begin{figure}
+\centering
+     \begin{tikzpicture}
+\begin{axis}[width=13.5cm,
+    height=10cm,
+    mark size = 0.1,
+    xlabel = {The ratio of the number of elements to the size of the table},
+    ylabel = {Probability of succesfull recovery},
+    legend style={
+        at={(0.5,-0.2)}, % Position of legend relative to the plot area
+        anchor=north,     % Anchor legend to be below the plot
+        legend columns=2, % Number of columns for the legend entries
+        font=\footnotesize,% Font size of legend entries
+        draw=none        % No border around legend
+    },
+    ]
 
-\section{}
--compare algorythms
 
-\section{Decoding with oracle}
-HPW and IBLT algorithms have one inherent problem due to their nature is not possible to get better raratio of bucket to size of symetric difference than 1. 
+\addplot[color=blue, dashed] table [x=Fullness, y=Decoded, col sep=comma] {BaseRetrievalIBLTpol2.csv.txt};
 
-We first start by example from real world. Imagine going to supermarket and buing $bread$, $ham$ and $butter$.
+\addplot[color=blue]  table [x=Fullness, y=Decoded, col sep=comma] {BaseRetrievalHPWpol2.csv.txt};
 
-For some reason you decide encode all the items using HPW algorithm to some sketch, we set the number oof hash function to $2$. 
-The resulting sketch looks likes this [\{bread}, \{bread, ham, butter\}, \{butter, ham\}]. After some time, we decide to recover items from the sketch. We first find recover bread, after such we are stuck. As we got a 2-core. However we remeberer, that we offten buy cheese with bread. We thus toggle cheese into the sketch. If we try decoding again we see no iprovement as such, we toggle out the cheese. Now, we try ham. As ham was in the sketch, we broke the existing 2-core and decode ham. Now, we succesfully recovered the whole sketch.
+\addplot[color=black, dashed] table [x=Fullness, y=Decoded, col sep=comma] {BaseRetrievalIBLTlin2.csv.txt};
 
-This is very close to our aproach. We utilize a oracle which is able from some element $a$ recomend some set $A$ of elements, that are probably in the sketch if $a$ is in the sketch. The algorithm looks like this:
+\addplot[color=black] table [x=Fullness, y=Decoded, col sep=comma] {BaseRetrievalHWPlin2.csv.txt};
+
+\addplot[color=red, dashed] table [x=Fullness, y=Decoded, col sep=comma] {BaseRetrievalIBLTmul2.csv.txt};
+
+\addplot[color=red] table [x=Fullness, y=Decoded, col sep=comma] {BaseRetrievalHWPmul2.csv.txt};
+
+\addplot[color=green, dashed]  table [x=Fullness, y=Decoded, col sep=comma] {BaseRetrievalIBLTTab2.csv.txt};
+
+\addplot[color=green] table [x=Fullness, y=Decoded, col sep=comma] {BaseRetrievalHPWTab2.csv.txt};
+
+\legend{IBLT $2$-nd polynomial, HWP $2$-nd polynomial,IBLT Linear Congruence,HWP Linear Congruence, IBLT MultiplyShift, HWP MultiplyShift,  IBLT Tabulation, HWP Tabulation}
+
+\end{axis}
+\end{tikzpicture}
+         \caption{All together}
+         \label{fig: graph_recovery}
+        \caption{Graph of the probability of recovery depending on  recovery algorithm, hash function family, and ratio of buckets to elements encoded in 10000 buckets}
+        \label{fig:recovery}
+\end{figure}
 
 
-Good domain for such testing are k-mer sets. When $AATT$ is in the set, than one of $ATTA$, $ATTT$, $ATTC$ or $ATTG$ are with high probability also in the set. 
-One may imagine, that we work with a graph, where k-mers are vertices and edges exists between k-mers, that share at least {k-1} substring. This graph is going to be souvisly for every dna string. Howeever for.
 
-Graph 
-This is also going to be nealry true for symteric difference of k-mer sets. 
 
-We are going to create a synetize data
+\FloatBarrier
 
-We try to beat such bound but assuming, that ocurence of some data is not entirely inpendant. This behaviour is natural for many domains. For example, someone buing a bread is probaly going to buy also butter and ham or cheese. However it may hard to guess, that someone also bought a socks.  
+\section{Decoding with oracle}\label{dec_oracle}
+HPW and IBLT algorithms have one inherent problem due to their nature: it is impossible to get a better ratio of the buckets to the size of a symmetric difference than 1. This comes from the simple fact that we must pair elements to buckets. However, we could circumvent this problem by pairing multiple elements with each bucket. 
 
-Imagine encoding same set $A$ using HWP algorithm, when one is unlucky the sketch may be unrecoverable.However we were able to decode element $a$, this can be possible bread from the previous example. We may guess, that butter is also is 
+We first show an example and then describe the method more formally. Imagine going to the supermarket and buying $bread$, $ham$, and $butter$.
 
+For some reason, you decided to encode all the items using the HPW algorithm to some sketch. For simplicity, we set the number of hash functions to $2$.
+
+The resulting sketch looks likes this (\{bread\}, \{bread, ham, butter\}, \{butter, ham\}). After some time, we decide to recover items from the sketch. We first recover bread as there exits a bucket bread is alno. After that, we are stuck as we have a 2-core. However, we remember that we often buy cheese with bread. We thus toggle cheese into the sketch. This, however, did not help us as it was not located in the sketch. Again, we search in memory, remembering that we often buy ham together with bread. After toggling out the ham, we see that only butter is 
+in the sketch. So, we successfully recovered the whole sketch.
+
+\begin{figure}
+    \centering
+      \includesvg{img/recovery_with_oracle.svg}
+
+    \caption{Recovery process from the example}
+    \label{fig:enter-label}
+\end{figure}
+
+The approach given in the example is very similar to our algorithm for recovery with Oracle. However, there are a few differences.
+
+
+\begin{defn}
+Be $f$ a function from $A$ to $2^A$, then we call $f$ an oracle over $A$. 
+\end{defn}
+
+\begin{defn}
+Be $f$ a oracle over some nonempty set $A$, than $$G_A^f := (A, \{(a, b); a \in A \land b \in f(a) \})$$ is called graf induced by oracle $f$ over $A$. 
+\end{defn}
+
+
+
+This is something close to our implementation:
+\begin{algorithm}
+\caption{Recover sketch F : Sketch -> Oracles -> A}
+\begin{algorithmic}[1]
+\State \textbf{Initial phase of the algorithm:}
+\State do $n$ steps of HPW algorithms
+
+\State \textbf{Recovery with oracle:}
+\For{$i \gets 1$ to $l$}
+    \State $A \gets$ recovered values
+    \State \textbf{Oracle prediction, pick some values that are "close" to already recovered}
+    \State $H \gets$ \{for every $a \in A$ pick uniformly randomly some $h$ from $f(a)$ with probability $p$ for every oracle $f \in F$\}
+    \State Toggle $H$ into the sketch
+    \State do $k$ steps of HPW algorithm
+    \State Toggle $H$ into the sketch 
+    \State do k steps of HPW algorithm
+
+    \State \textbf{Pruning}
+    \If{there are less than 20\% turns left}
+        \If{with probability 0.01}
+            \State $A \gets$ recovered values
+            \For{any $a \in A$ with probability 0.1}
+                \State Remove $a$ from $A$ and toggle it to sketch
+            \EndFor
+        \EndIf
+    \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+Good domains for such recovery are $k$-mer sets. When there is some $k$-mer $AATT$ three, there is an great chance that one of $ATTA$, $ATTT$, $ATTC$, or $ATTG$ also exists.
+As such, we define oracle $f_k$ for $k$-mer sets. 
+\begin{defn}
+Be $A$ set canonical $k$-mers and be $C := \{'A','C','G','T'\}$, than:
+    $$f_k(X) :=  \{cannonical(X[:k-1] + c) ; c \in C\}$$
+    and the other direction.
+    $$r_k(X) :=  \{cannonical(c + X[1:]) ; c \in C\}$$
+
+\end{defn}
+
+We should see that $G^{A}_{f_k}$ for $k$-mer set created from DNA string is a way. If we have two $k$-mer sets created from DNA strings and $A$ is their symmetric difference, then $G^{A}_{f_k}$ made up of many paths of length at least $k$. This is, however, true only for sets that do not enforce canonicity. When we enforce canonicity, some of those paths may be shortened.
+\subsection{Experiments}
+
+We have run the experiments for two hash function families, Linear Congruence and Tabulation. The test started at a ratio of $1:1.4$ buckets items and ended with $1:1.6$; we ran $40$ tests $20$ times each time, increasing the ratio by $0.01$. The number of buckets was $10000$. We run $100$ steps during the initial recovery phase, then we run up to $1000$ recovery rounds with up to $10$ steps. We set our oracle set to ${f_k, r_k}$.
+
+We have not used real $k$-mer data, but we created random string data. As such, we generated a set of $S$ of random DNA strings of length $n$, then created a $k$-mer set from each DNA string and merged them into one large set. We also converted all $k$-mers to canonical $k$-mers.
+We run the experiment for string lengths of $5$, $10$, $100$, and $1000$.
+
+
+We see,\ref{fig:oracle_recovery_com_all}, that tabulation is a better to hash family than linear congruence as it guarantees better behavior. If we look at the graphs, we see that tabulation recovers all sketches until some point, while Linear Congruence starts failing earlier. We can also see, that recovery improves with increased size of strings, this is logical as we longer strings, we have greater chance of getting some $k$-mer in it recovered.
+\begin{figure}
+     \centering
+     \begin{tikzpicture}
+    
+\begin{axis}[width=12cm,
+    height=10cm,
+    mark size = 0.1,
+    xlabel = {The ratio of the number of elements to the size of the table},
+    ylabel = {The probability of a successful recovery},
+    legend style={
+        at={(0.5,-0.3)}, % Position of legend relative to the plot area
+        anchor=north,     % Anchor legend to be below the plot
+        legend columns=2, % Number of columns for the legend entries
+        font=\footnotesize,% Font size of legend entries
+        draw=none        % No border around legend
+    },
+    ]
+
+
+\addplot[color=red!50] table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval5lin1.csv.txt};
+
+\addplot[color=blue!50] table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval5tab1.csv.txt};
+
+\addplot[color=red!70]  table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval10lin1.csv.txt};
+
+\addplot[color=blue!70]  table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval10tab1.csv.txt};
+
+\addplot[color=red] table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval100lin1.csv.txt};
+
+\addplot[color=blue] table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval100tab1.csv.txt};
+
+
+
+\addplot[color=red, dashed] table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval1000lin1.csv.txt};
+\addplot[color=blue, dashed] table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval1000tab1.csv.txt};
+
+
+
+
+
+
+
+
+\legend{5 - Linear Congruence, 5 - Tabulation, 10 - Linear Congruence, 10 - Tabulation, 100 - Linear Congruence, 100 - Tabulation, 1000 - Linear Congruence,  1000 - Tabulation }
+
+\end{axis}
+\end{tikzpicture}
+     \hfill
+        \caption{Graph of the probability of recovery with Oracle based on HWP algorithm for different lengths of strings for tabulation and linear congruence and on the number of elements to the number of buckets over 10000 buckets }
+        \label{fig:oracle_recovery_com_all}
+\end{figure}
+
+\begin{figure}\label{cannon}
+     \centering
+     \begin{tikzpicture}
+    
+\begin{axis}[width=12cm,
+    height=10cm,
+    mark size = 0.1,
+    xlabel = {The ratio of the number of elements to the size of the table},
+    ylabel = {The probability of a successful recovery},
+    legend style={
+        at={(0.5,-0.3)}, % Position of legend relative to the plot area
+        anchor=north,     % Anchor legend to be below the plot
+        legend columns=2, % Number of columns for the legend entries
+        font=\footnotesize,% Font size of legend entries
+        draw=none        % No border around legend
+    },
+    ]
+
+
+\addplot[color=red!50] table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval5tabNone1.csv.txt};
+
+\addplot[color=blue!50] table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval5tab1.csv.txt};
+
+\addplot[color=red!70]  table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval10tabNone1.csv.txt};
+
+\addplot[color=blue!70]  table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval10tab1.csv.txt};
+
+\addplot[color=red] table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval100tabNone1.csv.txt};
+
+\addplot[color=blue] table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval100tab1.csv.txt};
+
+
+
+\addplot[color=red, dashed] table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval1000tabNone1.csv.txt};
+\addplot[color=blue, dashed] table [x=Fullness, y=Decoded, col sep=comma] {KMerRetrieval1000tab1.csv.txt};
+
+
+
+
+
+
+
+
+\legend{5 - None, 5 - Cannonic, 10 - None, 10 - Cannonic, 100 - None, 100 - Cannonic, 1000 - None,  1000 - Cannonic }
+
+\end{axis}
+\end{tikzpicture}
+     \hfill
+        \caption{Graph of the probability of recovery with Oracle based on HWP algorithm for different lengths of strings for Cannonic and Non-Canonized sets on the number of elements to the number of buckets over 10000 buckets }
+        \label{fig:time_oracle_recovery_all}
+\end{figure}
+
+
+
+
+On the graphs \ref{fig:time_oracle_recovery_all}, we compare the recovery of the same algorithm over both canonized $k$-mer set and non-canonized. We see that the algorithm performs similarly well. 
+
+\begin{figure}
+     \centering
+         \begin{tikzpicture}
+\begin{axis}[width=12cm,
+    height=10cm,
+    mark size = 0.1,
+    xlabel = {The ratio of the number of elements to the size of the table},
+    ylabel = {Means time of recovery [ms]},
+    legend style={
+        at={(0.5,-0.2)}, % Position of legend relative to the plot area
+        anchor=north,     % Anchor legend to be below the plot
+        legend columns=2, % Number of columns for the legend entries
+        font=\footnotesize,% Font size of legend entries
+        draw=none        % No border around legend
+    },
+    ]
+
+
+\addplot[color=green] table [x=Fullness, y expr=\thisrowno{2}, col sep=comma] {KMerRetrieval5lin1.csv.txt};
+
+
+\addplot[color=blue]  table [x=Fullness, y=Time, col sep=comma] {KMerRetrieval10lin1.csv.txt};
+
+\addplot[color=red] table [x=Fullness, y=Time, col sep=comma] {KMerRetrieval100lin1.csv.txt};
+
+
+
+\addplot[color=red, dashed] table [x=Fullness, y=Time, col sep=comma] {KMerRetrieval1000lin1.csv.txt};
+
+
+
+
+
+
+
+
+
+
+\legend{5 - Linear Congruence, 10 - Linear Congruence, 100 - Linear Congruence, 1000 - Linear Congruence }
+
+\end{axis}
+\end{tikzpicture}
+         \caption{Graph of the mean time of recovery with Oracle based on HWP algorithm over Linear Congruence for different lengths of strings   and on the number of elements to the number of buckets over 10000 buckets }
+         \label{fig: time_oracle_recovery_2
+}
+\end{figure}
+\begin{figure}
+    \centering
+\begin{tikzpicture}
+    
+\begin{axis}[width=12cm,
+    height=10cm,
+    mark size = 0.1,
+    xlabel = {The ratio of the number of elements to the size of the table},
+    ylabel = {Means time of recovery [ms]},
+    legend style={
+        at={(0.5,-0.2)}, % Position of legend relative to the plot area
+        anchor=north,     % Anchor legend to be below the plot
+        legend columns=2, % Number of columns for the legend entries
+        font=\footnotesize,% Font size of legend entries
+        draw=none        % No border around legend
+    },
+    ]
+
+
+\addplot[color=green] table [x=Fullness, y expr=\thisrowno{2}, col sep=comma] {KMerRetrieval5tab1.csv.txt};
+
+
+\addplot[color=blue]  table [x=Fullness, y=Time, col sep=comma] {KMerRetrieval10tab1.csv.txt};
+
+\addplot[color=red] table [x=Fullness, y=Time, col sep=comma] {KMerRetrieval100tab1.csv.txt};
+
+
+
+\addplot[color=red, dashed] table [x=Fullness, y=Time, col sep=comma] {KMerRetrieval1000tab1.csv.txt};
+
+
+
+
+
+
+
+
+
+
+\legend{5 - Tabulation, 10 - Tabulation, 100 - Tabulation, 1000 - Tabulation }
+
+\end{axis}
+\end{tikzpicture}
+     \hfill
+        \caption{Graph of the mean time of recovery with Oracle based on HWP algorithm over Tabulation for different lengths of strings   and on the number of elements to the number of buckets over 10000 buckets }
+        \label{fig:time_oracle_recovery_2}
+\end{figure}
+
+
+
+
+We have not written our tests to measure performance. However on figures \ref{fig:time_oracle_recovery_1} and \ref{fig:time_oracle_recovery_2}, we may see some interesting behavior where there is a window of a slowdown around a point where the test sketch is not being recovered. This is probably explainable by the two facts: if we recover many items in the first phase of the algorithm, then the algorithm quickly recovers the remainder, and when we recover too few items, recovery with oracle is very fast as there are not many items to work with.
+
+\FloatBarrier
+
+\section{Performance}
+We did some performance testing using primarly BenchmarkDotNet for such purpose. 
+
+\subsection{Hash functions}
+We tested the performance of the hash function with this benchmark:
+\begin{lstlisting}
+[Benchmark]
+public ulong BenchmarkHashFunction()
+{
+    ulong sum = 0;
+    ulong[] buffer = new ulong[BufferLength];
+    //BufferLength was set at 4096
+    ulong[] answerBuffer = new ulong[BufferLength];
+
+    //FillBuffer was called 1024 times
+    //Data was created beforehand
+
+    //HOTPATH
+    while (Stream!.FillBuffer(buffer) > 0)
+    {
+        f(buffer, answerBuffer, 0, BufferLength);
+
+        for (int j = 0; j < BufferLength; j++)
+        {
+            sum += answerBuffer[j];
+        }
+    }
+    //END HOPATH
+    return sum;
+}
+\end{lstlisting}
+Data was created beforehand, and there were circa $4$ million numbers hashed ($1024 \cdot 4096$). Modulo is just modeling to a certain size; polynomial had order $2$.
+\begin{table}[h!]
+\centering
+\begin{tabular}{l r r r r r}
+\toprule
+Hashing Scheme & \multicolumn{1}{c}{Mean} & \multicolumn{1}{c}{Error} & \multicolumn{1}{c}{StdDev} & \multicolumn{1}{c}{Median} & \multicolumn{1}{c}{MH/s} \\
+\midrule
+LinearCongruence    & 14.514 ms & 0.2823 ms & 0.4477 ms & 14.388 ms & 288.97 \\
+Modulo          &  8.828 ms & 0.1628 ms & 0.4202 ms &  8.848 ms & 475.12 \\
+MultiplyShift    &  8.779 ms & 0.1732 ms & 0.3034 ms &  8.808 ms & 477.66 \\
+Polynomial-2           & 16.787 ms & 0.5540 ms & 1.5625 ms & 16.181 ms & 249.91 \\
+Tabulation           & 80.691 ms & 1.8565 ms & 5.3265 ms & 79.234 ms &  51.97 \\
+\bottomrule
+\end{tabular}
+\caption{Benchmark results for various hash function families for circa 4 million ulong entries over BenchmarkDotNet v0.13.12, Ubuntu 20.04.6 LTS (Focal Fossa) (container)
+AMD EPYC 7763, 1 CPU, 2 logical cores and 1 physical core
+.NET SDK 8.0.301
+  [Host]     : .NET 8.0.6 (8.0.624.26715), X64 RyuJIT AVX2
+  Job-ABHFES : .NET 8.0.6 (8.0.624.26715), X64 RyuJIT AVX2 }
+\label{table:benchmark_results_hash_functions}
+\end{table}
+
+When compared with results of P\u{a}tra\c{s}cu and Thorup \cite{10.5555/2627817.2627833}. We may see that our implementation of Polynomial is much faster; it has just 2 times slowdown to multiply shift, but theirs shows more than 10. Such a difference is very surprising; we do not understand why. 
+
+One possibility is that we tested hashing schemes for some fixed size in our tests. We had to pay for a modulo operation or its equivalent. We are not sure whether the authors of the paper did similarly.
+
+Another possibility may be different instruction costs on different machines. This may not be the reason entirely. However, tabulation is circa 30 percent faster on our local machine, while MultiplyShift is nearly 2 times slower. 
+\begin{table}[h!]
+\centering
+\begin{tabular}{l r r}
+\toprule
+Hashing Scheme & \multicolumn{1}{c}{MH/s} \\
+\midrule
+univ-mult-shift         & 787.40 \\
+3-indep-Mersenne-prime  &  58.14 \\
+tabulation            & 206.61 \\
+\bottomrule
+\end{tabular}
+\caption{Results of P\u{a}tra\c{s}cu and Thorup for various Hashing Schemes}
+\label{table:hashing_performance}
+\end{table}
+
+\section{Updates}
+When we look at the cost of updates , there are two main costs: Hashing and Random Access to a table. Sadly, we do not live in a world where RAM is a reality, and the larger an array is, the higher the cost for random access to it.  This is mainly caused by the architecture of memory; as such, from some size, the array does not fit into the cache, and we get more cache misses.
+
+\subsection{Update Cost Depending on the Size of Sketch}
+We tested encoding for sketches of different sizes, and as a hash function family, we chose multiply-shift. We show the benchmark used.
+\begin{lstlisting}
+[Benchmark]
+public ulong[] BenchmarkDecoder()
+{
+    var config = new EncoderConfiguration<XORTable>(
+            new[] { 
+            HashingFunctionProvider.Get(
+                hashingFunctionFamily,
+                TableSize, 
+                0
+            )},
+            (int)TableSize
+        );
+    var factory = new EncoderFactory<XORTable>(
+        config,
+        size => new XORTable(new ulong[size])
+        );
+    var encoder = factory.Create();
+    //HOTPATH
+    foreach (var buffer in stream)
+    {
+        encoder.Encode(buffer, buffer.Length);
+    }
+    //END HOTPATH
+    return encoder.GetTable().GetUnderlyingTable();
+}    
+\end{lstlisting}
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{r r r}
+\toprule
+Size of the table& \multicolumn{1}{c}{HPW MOp/s} & \multicolumn{1}{c}{IBLT MOp/s} \\
+\midrule
+$2^{10}$    & 278.33 & 181.47 \\
+$2^{11}$    & 274.58 & 178.53 \\
+$2^{12}$    & 274.17 & 175.93 \\
+$2^{13}$    & 273.79 & 174.42 \\
+$2^{14}$    & 263.55 & 154.11 \\
+$2^{15}$    & 253.25 & 147.43 \\
+$2^{16}$    & 238.48 & 139.84 \\
+$2^{17}$    & 221.54 & 135.77 \\
+$2^{18}$    & 215.58 & 130.44 \\
+$2^{19}$    & 205.39 & 124.66 \\
+$2^{20}$    & 190.34 & 74.28 \\
+$2^{21}$    & 182.21 & 47.15 \\
+$2^{22}$    & 102.49 & 44.05 \\
+$2^{23}$    & 87.68 & 40.08 \\
+$2^{24}$    & 81.75 & 36.90 \\
+$2^{25}$    & 74.19 & 34.88 \\
+$2^{26}$    & 58.45 & 27.98 \\
+\bottomrule
+\end{tabular}
+\caption{Benchmark results for different table sizes (powers of two) for HPW and IBLT in MOp/s. 
+BenchmarkDotNet v0.13.12, Ubuntu 20.04.6 LTS (Focal Fossa) (container)
+AMD EPYC 7763, 1 CPU, 4 logical and 2 physical cores
+.NET SDK 8.0.203
+  [Host]     : .NET 8.0.3 (8.0.324.11423), X64 RyuJIT AVX2}
+\label{table:benchmark_results}
+\end{table}
+
+Firstly, this comparison is inherently unfair. As IBLT is tested for 2 hash functions. This, however, does not impact the latter cost of consuming $3$-times memory. As we may see, IBLT is up $2$ times slower for very large tables as the cost of random access increases.
+
+We may see two interesting facts: the overhead cost for the multiply shift is approximately two times the cost of hashing. However, as the sizes increase, the performance drops significantly. This is, however, in line with our model. One should note that for different machines, the exact values are going to differ, probably mainly depending on cache architecture. 
+If we consider the performance of hash functions, we may clearly see that tabulation will be very expensive. We should also see that the performance of hash functions is much more important for small sizes, as their effect is greater.
+
+
+
+\subsection{Encoding $k$-mer sets}\label{encoding_kmer_sets}
+The test comprised reading a file containing 100M $k$-mers and encoding using 3 hash functions from the multiply shift family to a table of size 10M. We parallelized the encoding and used this benchmark: 
+\begin{lstlisting}
+[Benchmark]
+public object ParallelEncode()
+{
+    var hfs = HashingFunctionCombinations
+            .GetFromSameFamily(
+        3,
+        new MultiplyShiftFamily())
+            .GetFactory()((int)TableSize)
+            .Select(h => LittleSharp
+            .Utils
+            .Buffering
+            .BufferFunction(h).Compile())
+            .ToList();
+    var GetEncoder = () =>
+        new Encoder<XORTable>(
+            new XORTable((int)TableSize),
+            hfs,
+            1024);
+    string fastaFilePath = "test.test";
+    var config = FastaFile.Open(new StreamReader(fastaFilePath));
+    var reader = new FastaFileReader(
+        config.kMerSize, 
+        config.nCharsInFile, 
+        config.textReader, 
+        1024 * 1024, 
+        8
+        );
+
+    var CreateTask = () => new Task<XORTable>(() =>
+    {
+        var encoder = GetEncoder();
+        while (true)
+        {
+            //HOTPATH
+            FastaFileReader.Buffer? data;
+            lock (reader)
+            {
+                data = reader.BorrowBuffer();
+            }
+            if (data is null)
+            {
+                break;
+            }
+            encoder.EncodeParallel(data.Data, data.Size);
+            lock(reader){
+                    reader.RecycleBuffer(data);
+            };
+            //END HOTPATH
+        }
+        return encoder.GetTable();
+    });
+    var tasks =
+        Enumerable
+        .Range(0, 4)
+        .Select(_ => CreateTask())
+        .ToArray();
+    foreach (var task in tasks)
+    {
+        task.Start();
+    }
+    Task.WaitAll(tasks.ToArray());
+    return tasks.Aggregate(
+    new XORTable((int)TableSize),
+    (t, x) => x.Result.SymmetricDifference(t)
+    );
+}
+
+\end{lstlisting}
+We got the mean time of \textbf{ $645$ ms}, translating to \textbf{152 MOp/s}. One should also note the cost of reading from the $k$-mer file is not insignificant as it consumes relatively many instructions. The test was performed this machine: BenchmarkDotNet v0.13.12, Ubuntu 20.04.6 LTS (Focal Fossa) (container)
+AMD EPYC 7763, 1 CPU, 4 logical and 2 physical cores
+.NET SDK 8.0.203
+  [Host]     : .NET 8.0.3 (8.0.324.11423), X64 RyuJIT AVX2
+  DefaultJob : .NET 8.0.3 (8.0.324.11423), X64 RyuJIT AVX2

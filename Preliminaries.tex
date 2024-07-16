@@ -1,10 +1,10 @@
-\chapter{Preliminaries}
+\chapter{Preliminaries}\label{preliminaries}
 \section{Randomized Algoritms}
 We are going to need some tools to work with mean and variance. The simplest is:
 \begin{thm}
-    (\textbf{Markov Inequality}) Given a nonnegative random variable $X$ with expectation $$ Pr[X > kE[X]]\leq \frac{1}{k}$$
+    (\textbf{Markov Inequality}) Given a nonnegative random variable $X$ with expectation $E[X]$, it holds that $$ Pr[X > kE[X]]\leq \frac{1}{k}$$
 \end{thm}
-In simplicity, this theorem says that only $\frac{1}{k}$ people can be $k$-times richer than the mean.  
+In simplicity, this theorem says that only the $\frac{1}{k}$ fraction of the people can be $k$-times richer than the mean.  
 
 \begin{defn}
     (\textbf{Variance}) Let $X$ be random variable, than $$Var[X] := E[(E[X] - X)^2]$$.   
@@ -13,42 +13,43 @@ In simplicity, this theorem says that only $\frac{1}{k}$ people can be $k$-times
 
 One can, with little work, get a Chebichev Inequality from Markov Inequality.
 \begin{thm}
-(\textbf{Chebyshev inequality})  Given a nonnegative random variable $X$ with expectation $$Pr[|X-E[X]| > kVar \leq \frac{Var[X]}{k^2}$$
+(\textbf{Chebyshev Inequality})  Given a  random variable $X$ with expectation $$Pr[|X-E[X]| > k \leq \frac{Var[X]}{k^2}$$
 \end{thm}
 
-Both previous theorems work for all random variables. We may get a better bound by requiring more from the random variables. We will require that they be independent and have a Bernoulli distribution.
+The previous theorems work for all random variables. We may get a better bound by requiring more from the random variables. We will require that they are independent and are the sum of Bernoulli random variables.
 
 \begin{thm}
     (\textbf{Multiplicative Chernoff bound})  Given independant Bernoulli random variable $X_1, X_2 \dots X_n$ such that $X = \sum_{n=1}^nX$ and $E[X] = \mu$, then for $0 \leq \beta \leq 1$ 
     $$Pr[X \leq (1 - \beta)\mu] \leq \exp \left( \frac{-\beta^2\mu}{2} \right)$$
 \end{thm}
 
-We have two main types of randomized algorithms - Las Vegas and Monte Carlo.
-Las Vegas algorithms are guaranteed to have correct answers, but they are not guaranteed to end.
+We have two main types of randomized algorithms: Las Vegas and Monte Carlo.
+Las Vegas algorithms are guaranteed to return correct answers, but they are not guaranteed to end.
 Monte Carlo does not always return the correct answer, but the probability of failure is low. Often, the value is set not to be greater $\frac{1}{3}$. A correct answer does not 
-have to be exactly the right value; sometimes, we allow some amount of error and answers close enough, we count as success.
+have to be exactly the right value; sometimes, we allow some amount of error and answers close enough, which we count as success.
 
-The number $\frac{1}{3}$ may seem arbitary. It is. We will show that any algorithm with a probability of success is more than $\frac{1}{2}$. Can be modified to increase its probability of success to any value smaller than $1$. This trick is often called a Median trick. 
+The number $\frac{1}{3}$ is arbitrary. We will show that any algorithm with a probability of success more than $\frac{1}{2}$ can be modified to increase its probability of success to any value smaller than $1$. This trick is often called the Median trick. 
 
 \subsubsection{Median Trick}
 
-Let's say we have some randomized algorithm $A$ with a probability of success $p$. Now we run $k$ instances of $A$. We then pick a median of all results. This approach fails when the median instance is a failure. This happens only if more than $\frac{k}{2}$ instances were failures. 
+Let us say we have some randomized algorithm $A$ with a probability of success $p$. Now we run $k$ instances of $A$. We then pick the median of all results. This approach fails when the median instance is a failure. This happens only if more than $\frac{k}{2}$ instances were failures. 
 
-We can now use Multiplicative Chernoff bound to determine how many instances of $A$ we have to run to get some desired success rate of $p'$. We set $X$ as the number of successful instances. We need $(1-\beta)\mu$ to equal $\frac{n}{2}$. 
+We can now use Multiplicative Chernoff bound to determine how many instances of $A$ we must run to get some desired success rate of $p'$. We set $X$ as the number of successful instances. We need $(1-\beta)\mu$ to equal $\frac{k}{2}$. 
 
-$$(1-\beta)\mu = (1-\beta)np = \frac{n}{2}$$. 
+That is,
+$$(1-\beta)\mu = (1-\beta)kp = \frac{k}{2}$$. 
 $$\beta = \frac{2p + 1}{2p}$$
 
 
-Then we get: $$Pr[X \leq \frac{n}{2}] \leq \exp \left( \frac{-(2p+1)pn}{2} \right) = 1 - p'$$
-This means that the probability of failure lowers exponentially with the number of instances run. So, when we want a error rate $\delta$, than we need to run $\O(\log(\frac{1}{\delta}))$ instances.
+Then we get: $$Pr[X \leq \frac{n}{2}] \leq \exp \left( \frac{-(2p+1)n}{2} \right) = 1 - p'$$
+This means the probability of failure decreases exponentially with the number of instances run. So, when we want an error rate $\delta$, than we need to run $\O(\log(\frac{1}{\delta}))$ instances.
 
-This is a very useful trick as it allows us to strive for randomized algorithms with low success rates and we are punished just by logarithmic slowdown.
+This is a very useful trick as it allows us to strive for randomized algorithms with low success rates, and we are punished just by logarithmic slowdown.
 
-Some algorithms have a better probability of succeeding and the larger the data they work on are.  If we can prove that the limit in the infinity of such probability is one, we say that the algorithm succeeds with high probability. An abbreviation "whp" is often used.
+Some algorithms are more likely to succeed with larger data sets.  If we can prove that the limit in the infinity of such probability is one, we say that the algorithm succeeds with high probability. An abbreviation "whp" is often used.
 
 \section{Hypergraphs}
-A graph is a tuple of two sets. One set contains vertices and one edges. Normally, edges may connect only two vertices. Formally edges are sets containing exactly two vertices, but what if we allowed edges to contain any number of vertices? 
+A graph is a tuple of two sets. One set contains vertices and one edge. Normally, edges may connect only two vertices. Formally, edges are sets containing exactly two vertices, but we may generalize this concept to allow more vertices be connected by one edge.
 \subsection{Basics}
 This leads to hypergraphs:
 
@@ -56,86 +57,100 @@ This leads to hypergraphs:
     Let \(V\) be a set and \(E \subseteq P(V)\), then the tuple \((V, E)\) is called a hypergraph. Elements of \(V\) are called vertices, and aspects of \(E\) are called edges.
 \end{defn}
 
-One should easily see that every graph is also a hypergraph. The other way is clearly not true. Some terms are connected to graphs, which would be useful to state also for hypergraphs. Definitions are going to be very similar to their graph equivalents. We begin with the subgraph:
+One should easily see that every graph is also a hypergraph. The other way is not true. Some terms are connected to graphs, which would be useful to state also for hypergraphs. Definitions are going to be very similar to their graph equivalents. We begin with the subgraph:
 
 \begin{defn}
     Let \(G:= (V, E)\) be a hypergraph, then \(G':= (V',E')\) is a subgraph of \(G\) if \(V'\subseteq V\) and \(E' \subseteq E\), and we may write that as \(G' \subseteq G\).
 \end{defn}
 
-Then continue with degree:
-
 \begin{defn}
     Let \(G\) be some hypergraph and its \(G'\) subgraph, then \(G'\) is a \(k\)-core if every vertex of \(G'\) has a degree of at least \(k\) and \(G'\) is the largest such subgraph of \(G'\).
 \end{defn}
 
-Sometimes, we would like to have only the same size edges. This concept is called $k$-uniformity.
+Sometimes, we would like to have edges that are only the same size. This concept is called $k$-uniformity.
 \begin{defn}
-    Let \(G:= (V, E)\) be than a hypergraph, than $G$ is $k$-uniform, if $\forall e \in E : |e| = k$.
-    Then, we define degree in hypergraph
+    Let \(G:= (V, E)\) be a hypergraph, than $G$ is $k$-uniform, if $\forall e \in E : |e| = k$.
 \end{defn}
 
+We define degree:
 \begin{defn}
-    Let \(G:= (V, E)\) be than a hypergraph, and be $v$ some vertice from $V$ than $\Delta(v) = |{e \in E; v\in e }|$. We call this property degree of vertice.
+    Let \(G:= (V, E)\) be a hypergraph, and be $v$ some vertice from $V$ than $\Delta(v) = |{e \in E; v\in e }|$. We call this property degree of vertice.
 \end{defn}
 
-
-\subsection{Paring in Random Hypergraphs}
-Imagine being a kindergarten teacher. Your goal is to ensure that children have enough toys to play with. 
-There are a few problems with that. Children are quite picky, and everyone is willing to play with exactly 3 toys.
- Children do not understand that sharing is caring. Thus, every child needs at least one toy with which they are willing to play. Children pick toys they are willing to play with randomly, but you assign the toys to the children. Lastly, you are limited in budget, and the fewer toys you buy, the better.
-
-We can translate this problem to hypergraphs. Toys are vertices, and children's possible choices of toys are edges. We now name this hypergraph $G$ and let $G = (V, E)$. This hypergraph is actually $3$-universal. Now we define a new term:
+and used them to define $k$-cores
 \begin{defn}
    \textbf{k-core} is the largest subgraph \( H \) of graph \( G \) such that all vertices have a degree of at least \( k \). 
 \end{defn}
-One should see that if $G$ contains a $2$-core hypergraph, pairing is not possible. The other way is to get it from Hall's Theorem. It may not be clear what exactly means, "Children pick toys they are willing to play with randomly." By randomly, we mean they uniformly choose from the set of subsets of $V$ with size $3$.
 
-We now may call a result from [https://arxiv.org/pdf/1101.2245]. This says that random 3-uniform hypergraphs with $n$ vertices a and $m$ edges do not contain a $2$-core with high probability if $\frac{n}{m} \geq 1.222\dots$. This solution is tight, thus when the ratio is less than $1.222\dots$, than $2$-core is found with high probabilty.
+\subsection{2-cores in Random Hypergraphs}
 
-This gives a solution to our problem. This result shows we need at least a $1.22$ toy for each kid.
-This, however, does help us as it is unclear whether we can find such a pairing quickly. There is a simple hungry algorithm:
+ We start by defining $k$-uniform random hypergraph with $m$ edges.
+\begin{defn}
+Be $V$ set of vertices and $A$ set of hypergraphs on $V$. Then, the random graph $G(V, A)$ on $A$ is a graph uniformly picked from $A$.
+\end{defn}
+ \begin{defn}
+Be $V$ set of vertices and $A$ set of $k$-uniform hypergraph on $V$  with $m$ edges, then $k$-uniform random hypergraph with $m$ edges is defined as $G_k^m := G(V, A)$
+ \end{defn}
 
-\begin{lstlisting}
-Step G : (V,E) -> (V,E)
-    G = (V,E)
-    ToBeRemoved <- { e in E; 
-            (exists v in  e) (degree of v is 1)
-            }
-    return (V, E - ToBeRemoved)
+Now, we may state an important bound proved by Molloy \cite{Molloy04}. He proved that random 3-uniform hypergraphs with $n$ vertices a and $m$ edges do not contain a $2$-core with high probability if $\frac{n}{m} \geq 1.222\dots$. This solution is tight; thus, when the ratio is less than $1.222\dots$, then $2$-core is found with high probability.
 
-Run G : (V,E) -> False or True
-    G = (V,E)
-    (V, New ) <- Step G 
-    E = New return False
-    E = {} return True
-    return Run (V,New)
-\end{lstlisting}
-Hungry algorithms have a bad tendency not to work. However, it works for this problem. If some vertices lie in only one edge, we can pair these two together and remove such edges. If there exists none such vertice, then we found $2-core$.
+Finding $2$-cores in a hypergraph is quite easy.
+
+\begin{algorithm}
+\caption{Step $G : (V, E) \to (V, E)$}
+\begin{algorithmic}[1]
+\Procedure{Step}{$G = (V, E)$}
+    \State $ToBeRemoved \gets \{ e \in E \mid (\exists v \in e) (\text{degree of } v \text{ is } 1) \}$
+    \State \Return $(V, E \setminus ToBeRemoved)$
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{Run $G : (V, E) \to$ \textbf{False} or \textbf{True}}
+\label{FindTwoCore}
+\begin{algorithmic}[1]
+\Procedure{Run}{$G = (V, E)$}
+    \State $(V, \text{New}) \gets \Call{Step}{G}$
+    \If{$E = \text{New}$}
+        \State \Return \textbf{False}
+    \EndIf
+    \If{$E = \{\}$}
+        \State \Return \textbf{True}
+    \EndIf
+    \State \Return \Call{Run}{$(V, \text{New})$}
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+Greedy algorithms have a bad tendency not to work. However, it works for this problem. If some vertices lie in only one edge, we can pair these two together and remove such edges. If there exists none such vertex, then we found $2-core$. Algorithm \ref{FindTwoCore}.
 
 \section{Hashing}
 
 \subsection{Problem of Dictionary}
-The first time one meets with hashing functions is when faced with the need for a data structure with an \(O(1)\) time cost for insert and get by key. Suppose the keys are from \([n]\), where the number of inserts \(O(n)\), then the solution is simple. We can create an array of length \(n\) and index into it. 
+The first time one meets with hash functions is when faced with the need for a data structure with an \(O(1)\) time cost for insert and get by key. Suppose the keys are from \([n]\), where the number of inserts \(O(n)\), then the solution is simple. We can create an array of length \(n\) and index into it. 
 
-This solution, however, depends on the size of the universe. If the universe $U$ has a size of $M$, then we need to use a table of size $M$. This may and often is not feasible. For example, there are $2^{32}$ 32-bit integers. The main solution to this problem is to have some "good" hashing function $f:U \rightarrow [n]$, where $n$ is some desired table size. What means "good"? When we insert some item $a$ with key $k$ in the table, we insert at $f(k)$ index. When there is already value in the table, we get a hashing conflict. There are many possible solutions to this. The simplest solution is to keep more values in the same field.
+This solution, however, depends on the size of the universe. If the universe $U$ has a size of $M$, then we need to use a table of size $M$. This may not and often is not feasible. For example, there are $2^{32}$ 32-bit integers. The main solution to this problem is to have some "good" hash function $f:U \rightarrow [n]$, where $n$ is some desired table size. What means "good"? When we insert some item $a$ with key $k$ in the table, we insert at $f(k)$ index. When there is already a value in the table, we get a hash conflict. There are many possible solutions to this. The simplest solution is to keep more values in the same field.
 
 
-\subsection{Hashing Function Families}
-By "good," we mean that it minimizes hashing conflicts. There are a few properties that may be useful in determining such "goodness." Before we look at them, we need to address one problem. If we choose a hashing function deterministically, the enemy may choose data hashing with very few values. We may prevent this by picking a hashing function randomly from some hashing function family.
+\subsection{Hash Function Families}
+We would like to minimize hash conflicts. There are a few properties that may be useful in determining such "goodness." Before we look at them, we need to address one problem. If we choose a hash function deterministically, the enemy may choose data hash with very few values. We may prevent this by picking a hash function randomly from some hash function family.
 
 \begin{defn}
-A family \( F \) of hashing functions from \( X \rightarrow Y \), where \( |Y| = n \), is \textbf{c-universal} if 
+A family \( F \) of hash functions from \( X \rightarrow Y \), where \( |Y| = n \), is \textbf{c-universal} if 
 \[ \forall (x, y \in X) \left( P\left(f(x) = f(y)\right) \leq \frac{c}{n} \right), \]
 where \( f \) is chosen uniformly randomly from \( F \) and \(x \neq y \).
 \end{defn}
 
-Universality guarantees, that hashes are more or less evenly distributed. This is a useful property. As it allows us to state, that the expected number of items with the same hash is $E(\frac{c}{n})$. 
+Universality guarantees that hashes are more or less evenly distributed. This is a useful property. It allows us to state that the expected number of items with the same hash is $E(\frac{c}{n})$. 
 
-One problem with universality is that it allows for a hashing function family where all hashing functions hash from 1 to 0. This is prevented by being a hashing function family (c-k)independent. This property is sometimes called strong universality in the literature.
+One problem with universality is that it allows for a hash function family where all hash functions map  1 to 0. This is prevented by being a hash function family $(c,k)$-independent. This property is sometimes called strong universality in the literature.
 
 \begin{defn}
 A family \( F \) of hash functions from \( X \rightarrow Y \), where \( |Y| = n \), is \textbf{(c,k)-independent} if 
 \[ \forall (x_1, \dots, x_k \in X, y_1, \dots, y_k \in Y) \left( P\left(f(x_1) = y_1 \land \dots \land f(x_k) = y_k\right) \leq \frac{c}{n^k} \right), \]
+
+where \( f \) is chosen uniformly randomly from \( F \) and all $x_i$ all distinct.
+
 \end{defn}
 
 \subsection{Examples of Hash Function Families}
@@ -143,18 +158,47 @@ A family \( F \) of hash functions from \( X \rightarrow Y \), where \( |Y| = n 
 \subsubsection{Linear Congurence}
 One of the simplest hash functions is linear congruence. This function is defined as:
 \begin{defn}
-    Let \( p \) be a prime number, \(n\)  be from $\mathbf{N}$,  \( a \) a number from \([n-1]\), and \( b \) a number from \([p]\). Then the hashing function is defined as:
-    \[ f_{a,b}(x) = (ax + b) \mod n \mod p\]
+    Let \( p \) be a prime number, \(n\)  be from $\mathbf{N}$,  \( a \) a number from \([n-1]\), and \( b \) a number from \([p]\). Then, the hash function family is defined as:
+    \[ f_{a,b}(x) = (ax + b) \mod p \mod n\]
 
     Let $H_p^n$ be set of all such functions with prime $p$ and size $n$ , than we $H_p^n$ a linear congruence family.
 \end{defn}
  
-Linear congruence family is also useful in practice. Dictionaries in C\# are actually implemented using a linear congruence family. The main advantage of this family is that if we choose the size of the universe we are hashing to, then we get a function from a linear congruence family practically for free. The linear congruence family is $(2,4)$-independent. 
-[https://mj.ucw.cz/vyuka/dsnotes/06-hash.pdf]
+Linear congruence family is also useful in practice. Dictionaries in C\# are actually implemented using a linear congruence family. The main advantage of this family is that if we choose the size of the universe, we are hash to, then we get a function from a linear congruence family practically for free. The linear congruence family is $(2,4)$-independent. 
 
-\subsubsection{Multitplyshift}
-Multiply shift family is another often used hash function family. For example murmurhash is based of it. It has one advantage over linear congruence. It is, that it does use only logical shift and 
+\subsubsection{Multiplyshift}
+The multiply shift family is another often used hash function family. For example, murmurhash is based on it. It has one advantage over linear congruence. It uses only logical shifts and multiplications. However, it guarantees only $2$-universality. It is defined as 
+\begin{defn}
+Let $a \in \{0,1\}^n$ and $r < n$. Then the multiplyshift hash functions is defined as:
+$$f_{a,r}(x) :=  rightshift(ax, n - r) $$
+is a Multiplyshift hash function from $\{0,1\}^n$ to $\{0,1\}^r$
+\end{defn}
+\subsection{Tabulation}
+Tabulation is a hash function family with many good properties. It is $3$-independant. For us, Invertible Bloom Lookup tables may use a hash function from the tabulation hash function family instead of fully random hash functions. \cite{10.1145/3068772} Tabulation is also very performant as it requires only table lookups and xor.\cite{10.1145/3068772}
+We lastly show a definition of tabulation:
+\begin{defn}
+Be $L$ set of size $n$ and be $x := (x_1, \dots, x_m)$ of size $m$. Than let we have $m$ lookup tables $h_i$ of size $n$ and be these lookup tables filled with random values from some universe $U$, than: 
+$$h(x) =  h_1(x_1) \oplus \dots \oplus h_m(x_m)$$
+than $h$ is tabulation hash function from $L^n$ to $U$.
+\end{defn}
+
+\subsection{Choosing the Right Hash Function}
+In the previous section, we described some basic properties that are often required from hash functions. However, one should remember that the more independent the hash family is, the better it is. Sometimes, using universal hash function families instead of independent ones may, in reality, give good enough results. This is especially useful in performance-critical applications as less independent hash function families are often faster.
+
+\section{Strings}
+We will look at string very intuitively as a finite sequence of symbols. Let $A$ be some string, then $A_i$ is $i$-th symbol, $A[i:k]$ is substring of $A$ starting at $i$ and before the $k$-th. When $i$ equals $0$ or $k$ to the length of the string, we usually do not write them; thus, $A[0:k] = A[:] = A$, if the length of $A$ is $k$.
+
+\section{Bioinformatics}
+\subsection{DNA and kMers}
+For our purposes, one may imagine DNA as a string of four letters: A, C, G, and T. Two and two form pairs, namely being A with T and C with G. To every DNA string $S$, there exists its complement $C$. This complement may be obtained by first replacing all letters with the other letter in pairs and then reversing the string. This means "AAAT" has a complement "ATTT".
+
+DNA strings may be long, and getting them may be hard. As such, we often work on sets of $k$-mer. $k$-mer is a substring of length $k$. Similarly, as DNA has a complement, $k$-mers also have complements. We would sometimes need to have just one representation of a $k$-mer and its complement; thus, we define a canonical kMer as being lower in lexicographical ordering.
+
+\subsection{Masked Superstrings}
+
+When we have a set of keys, it is k-times more expensive to store them than a DNA string. This string may, however, be hard to get or even impossible. As Masked Superstring is used. 
+The main idea is to encode the $k$-mers into one long string. We then get all the $k$-mers, by taking all substrings of length $k$ of the string. However, creating such a string could be hard or impossible, so some $k$-mers are marked as not in the set. The simplest solution is to use upper and lower symbols, where upper means that $k$-mer starting with such symbol is in the set, and lower means such $k$-mer is not in the set. 
+\cite{Sladký}
 
 
-\section{Choosing right hash function}
-In the previous section, we described some basic properties that are often required from hash functions. However, one should keep in mind that the more independent the hash family, the better. There is a 
+

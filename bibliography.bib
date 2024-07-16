@@ -15,7 +15,7 @@
 %       use curly brackets ({T}hailand, {HIV}).
 %  ===========================================================================
 %
-@inproceedings{DBLP:conf/soda/Molloy04,
+@inproceedings{Molloy04,
   author       = {Michael Molloy},
   editor       = {J. Ian Munro},
   title        = {The pure literal rule threshold and cores in random hypergraphs},
@@ -39,7 +39,6 @@ pages = {228-241},
 doi = {10.1137/1.9781611977585.ch21},
 URL = {https://epubs.siam.org/doi/abs/10.1137/1.9781611977585.ch21},
 eprint = {https://epubs.siam.org/doi/pdf/10.1137/1.9781611977585.ch21},
-    abstract = { Imagine handling collisions in a hash table by storing, in each cell, the bit-wise exclusive-or of the set of keys hashing there. This appears to be a terrible idea: For an keys and n buckets, where α is constant, we expect that a constant fraction of the keys will be unrecoverable due to collisions. We show that if this collision resolution strategy is repeated three times independently the situation reverses: If α is below a threshold of ≈ 0.81 then we can recover the set of all inserted keys in linear time with high probability. Even though the description of our data structure is simple, its analysis is nontrivial. Our approach can be seen as a variant of the Invertible Bloom Filter (IBF) of Eppstein and Goodrich. While IBFs involve an explicit checksum per bucket to decide whether the bucket stores a single key, we exploit the idea of quotienting, namely that some bits of the key are implicit in the location where it is stored. We let those serve as an implicit checksum. These bits are not quite enough to ensure that no errors occur and the main technical challenge is to show that decoding can recover from these errors. }
 }
 
 @article{DBLP:journals/corr/abs-1204-2131,
@@ -56,7 +55,105 @@ eprint = {https://epubs.siam.org/doi/pdf/10.1137/1.9781611977585.ch21},
   bibsource    = {dblp computer science bibliography, https://dblp.org}
 }
 
-@misc{Generics1,
-    key = {Generics},
-    note = {learn.microsoft.com/en-us/dotnet/csharp/programming-guide/generics/generics-in-the-run-time}
+@article{10.1145/3068772,
+author = {Thorup, Mikkel},
+title = {Fast and powerful hashing using tabulation},
+year = {2017},
+issue_date = {July 2017},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {60},
+number = {7},
+issn = {0001-0782},
+url = {https://doi.org/10.1145/3068772},
+doi = {10.1145/3068772},
+journal = {Commun. ACM},
+month = {jun},
+pages = {94–101},
+numpages = {8}
+}
+
+
+@inproceedings{10.5555/2627817.2627833,
+author = {P\u{a}tra\c{s}cu, Mihai and Thorup, Mikkel},
+title = {Twisted tabulation hashing},
+year = {2013},
+isbn = {9781611972511},
+publisher = {Society for Industrial and Applied Mathematics},
+address = {USA},
+booktitle = {Proceedings of the Twenty-Fourth Annual ACM-SIAM Symposium on Discrete Algorithms},
+pages = {209–228},
+numpages = {20},
+location = {New Orleans, Louisiana},
+series = {SODA '13}
+}
+
+@INPROCEEDINGS{6120248,
+  author={Goodrich, Michael T. and Mitzenmacher, Michael},
+  booktitle={2011 49th Annual Allerton Conference on Communication, Control, and Computing (Allerton)}, 
+  title={Invertible bloom lookup tables}, 
+  year={2011},
+  volume={},
+  number={},
+  pages={792-799},
+  keywords={Data structures;Random access memory;Databases;Polynomials;Fault tolerance;Fault tolerant systems;Probabilistic logic},
+  doi={10.1109/Allerton.2011.6120248}}
+
+@article{10.1145/359619.359627,
+author = {Morris, Robert},
+title = {Counting large numbers of events in small registers},
+year = {1978},
+issue_date = {Oct. 1978},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+volume = {21},
+number = {10},
+issn = {0001-0782},
+url = {https://doi.org/10.1145/359619.359627},
+doi = {10.1145/359619.359627},
+abstract = {It is possible to use a small counter to keep approximate counts of large numbers. The resulting expected error can be rather precisely controlled. An example is given in which 8-bit counters (bytes) are used to keep track of as many as 130,000 events with a relative error which is substantially independent of the number n of events. This relative error can be expected to be 24 percent or less 95 percent of the time (i.e. σ = n/8). The techniques could be used to advantage in multichannel counting hardware or software used for the monitoring of experiments or processes.},
+journal = {Commun. ACM},
+month = {oct},
+pages = {840–842},
+numpages = {3},
+keywords = {counting}
+}
+
+
+@article{Sladký,
+	author = {Sladk{\'y}, Ond{\v r}ej and Vesel{\'y}, Pavel and B{\v r}inda, Karel},
+	title = {Function-Assigned Masked Superstrings as a Versatile and Compact Data Type for k-Mer Sets},
+	elocation-id = {2024.03.06.583483},
+	year = {2024},
+	doi = {10.1101/2024.03.06.583483},
+	publisher = {Cold Spring Harbor Laboratory},
+	abstract = {The exponential growth of genome databases calls for novel space-efficient algorithms for data compression and search. State-of-the-art approaches often rely on k-merization for data tokenization, yet efficiently representing and querying k-mer sets remains a significant challenge in bioinformatics. Our recent work has introduced the concept of masked superstring for compactly representing k-mer sets, designed without reliance on common structural assumptions on k-mer data. However, despite their compactness, the practicality of masked superstrings for set operations and membership queries was previously unclear. Here, we propose the f-masked superstring framework, which additionally integrates demasking functions f, enabling efficient k-mer set operations through concatenation. When combined with the FMS-index, a new index for f-masked superstrings based on a simplified FM-index, we obtain a versatile, compact data structure for k-mer sets. We demonstrate its power through the FMSI program, which, when evaluated on bacterial pan-genomic data, achieves memory savings of a factor of 3 to 10 compared to state-of-the-art single k-mer-set indexing methods such as SBWT and CBL. Our work presents a theoretical framework with promising practical advantages such as space-efficiency, demonstrating the potential of f-masked superstrings in k-mer-based methods as a generic data type.Competing Interest StatementThe authors have declared no competing interest.},
+	URL = {https://www.biorxiv.org/content/early/2024/03/11/2024.03.06.583483},
+	eprint = {https://www.biorxiv.org/content/early/2024/03/11/2024.03.06.583483.full.pdf},
+	journal = {bioRxiv}
+}
+
+@article{flajolet2007hyperloglog,
+  title={Hyperloglog: the analysis of a near-optimal cardinality estimation algorithm},
+  author={Flajolet, Philippe and Fusy, {\'E}ric and Gandouet, Olivier and Meunier, Fr{\'e}d{\'e}ric},
+  journal={Discrete mathematics \& theoretical computer science},
+  number={Proceedings},
+  year={2007},
+  publisher={Episciences. org}
+}
+
+@book{cormode2020small,
+  title={Small summaries for big data},
+  author={Cormode, Graham and Yi, Ke},
+  year={2020},
+  publisher={Cambridge University Press}
+}
+
+@inproceedings{bar2002counting,
+  title={Counting distinct elements in a data stream},
+  author={Bar-Yossef, Ziv and Jayram, TS and Kumar, Ravi and Sivakumar, D and Trevisan, Luca},
+  booktitle={Randomization and Approximation Techniques in Computer Science: 6th International Workshop, RANDOM 2002 Cambridge, MA, USA, September 13--15, 2002 Proceedings 5},
+  pages={1--10},
+  year={2002},
+  organization={Springer}
 }

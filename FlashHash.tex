@@ -1,17 +1,15 @@
-\chapter{FlashHash}
+\chapter{FlashHash}\label{FlashHash}
 \section{Motivation}
-The project required access to families of fast hashing functions. Sadly, no libraries were offering such. The base C\# library provides only cryptographic hashing functions. Other libraries offered hashing only from byte arrays. This meant we had to convert integer values to byte arrays, which caused performance bottlenecks. This led to the decision to implement, such a library ourselves.
+The project required access to families of fast hash functions. Sadly, no libraries were offering such. The base C\# library provides only cryptographic hashing functions. Other libraries offered hashing only from byte arrays. This meant we had to convert integer values to byte arrays, which caused performance bottlenecks. This led to the decision to implement, such a library ourselves. The library is at GitHub:  \url{https://github.com/vojtechgadurek/FlashHash}.
 
-We would like the library to provide fast hashing functions from long to long for some hashing families.
-
-\section{How to use}
-FlashHash implements two hashing function families - Linear Congruence and Multiply Shift.It isIHashingFunctionFamily
-There are two important concepts to understand:(Hashing Function) Schemes and (Hashing Function) Families. 
+\section{How to Use}
+FlashHash implements multiple hash function families - Linear Congruence, Polynomial, Tabulation, and Multiply Shift.
+There are two important concepts to understand: (Hash Function) Schemes and (Hash Function) Families. 
 \subsubsection{Schemes}
-Schemes describe one hashing function. One may build a hashing function out of it:
+Schemes describe one hash function. One may build a hash function out of it:
 \begin{lstlisting}
 var scheme = new LinearCongruenceScheme(10, 5, 7)
-// This scheme yields the following hashing function:
+// This scheme yields the following hash function:
 //  (10*x + 5) % Prime % 7
 // Prime represents the closest Mersene prime 
 	//greater than the size (7)
@@ -19,8 +17,8 @@ var scheme = new LinearCongruenceScheme(10, 5, 7)
 Expression<Func<ulong, ulong>> expression = scheme.Create()
 // Building an expression tree is not computationally expensive
 
-Func<ulong, ulong> hashingFunction = expression.Compile();
-// However, compilation is resource-intensive
+Func<ulong, ulong> hashFunction = expression.Compile();
+// However, the compilation is resource-intensive
 \end{lstlisting}
 
 \subsubsection{Families}
@@ -30,7 +28,7 @@ var family = new LinearCongruenceFamily();
 family.SetRandomness(new Random(42));
 // Custom randomness can be set
 ulong size = 10;
-Func<ulong, ulong> hashingFunction = 
+Func<ulong, ulong> hashFunction = 
     family.GetScheme(size).Create().Compile()
 // Retrieves a random hashing function 
 //from the linear congruence family
@@ -40,7 +38,7 @@ Func<ulong, ulong> hashingFunction =
 
 \section{Implementation}
 \subsection{Simplest Solution}
-There is very simple solution:
+There is a very simple solution:
 \begin{lstlisting}
 var CreateLinearCongruenceHashingFunction = 
     (long size) =>
@@ -51,9 +49,9 @@ var CreateLinearCongruenceHashingFunction =
         return (ulong x) => (a * x + b) % size % prime;
     }
 \end{lstlisting}
-This approach has one very large advantage: it is simple. On the other hand, we pay for this simplicity by performance, as constant optimization and inlining are not possible. One can easily see that linear congruence uses modulo operators. These are quite expensive, and even more so if they are not constant optimized. This implementation is circa $2-4$ times slower, depending on processor, than when a,b, size, and prime were known in advance.
+This approach has one very large advantage: it is simple. On the other hand, we pay for this simplicity by performance, as constant optimization and inlining are not possible. One can easily see that linear congruence uses modulo operators. These are quite expensive, and even more so if they are not constant optimized. This implementation is circa $2-4$ times slower, depending on the processor, than when \texttt{a}, \texttt{b}, \texttt{ size}, and \texttt{prime} were known in advance.
 
-There are two possible solutions to this in C\#: Expression Trees and Runtime Types with Struct Delegates. We talked about these in [number] chapter. We chose a solution via expression trees, but to interested readers, we first describe the solution by Runtime Types with Struct Delegates. 
+There are two possible solutions to this in C\#: Expression Trees and Runtime Types with Struct Delegates. We talked about these in \ref{FlashHash} chapter. We chose a solution via expression trees, but to interested readers, we first describe the solution by Runtime Types with Struct Delegates. 
 
 \subsection{Possible solution via Runtime Types with Struct Delegates}
 First, we have this implementation:
@@ -134,7 +132,7 @@ class LinearCongruenceFamily {
 
 
 \subsubsection{Constant Factory}
-The implementation of such library function may look something like this:
+The implementation of such a library function may look something like this:
 \begin{lstlisting}
 public static Type CreateRuntimeConstant(long value)
 {
@@ -170,11 +168,11 @@ public static Type CreateRuntimeConstant(long value)
     return tb.CreateType();
 } 
 \end{lstlisting}
-This solution has a small problem. It does not work, and we do not know why. We suppose Roslyn treats Runtime-generated types differently, but we did not investigate further.
+This solution has a small problem. It does not work, and we do not know why. We suppose Roslyn treats Runtime-generated types differently, but we have not investigated further.
 
 
 \subsection{Solution using Expression Trees (LittleSharp)}
-We are going to use LittleSharp for work with expression trees. Reasons for developing this library are given in the chapter about LittleSharp.
+We are going to use LittleSharp for work with expression trees. Reasons for developing this library are given in the chapter about LittleSharp \ref{LittleSharp}.
 
 Using LittleSharp the simplest solution looks like this:
 \begin{lstlisting}
@@ -193,18 +191,17 @@ var CreateLinearCongruenceHashingFunction =
     //This code is constant optimized
 \end{lstlisting}
 
-\subsection{Comparing aproaches}
+\subsection{Comparing Aproaches}
 Both approaches add significant complexity to the project. The main issue is that switching the context between runtime-generated and normal code is not smooth. One needs to use reflection calls in case of IL-generated code or delegates calls for Expression Trees. 
 Also, using runtime-generated code will cause type safety issues. This is because types cannot be checked before the code is generated during runtime. This may cause many hard-to-find bugs that may cause runtime errors.
 
-Both approaches are comparable. They both lead to constant optimized code and allow inlining with some additional work. Expression Trees are easier to work with because their API is simpler, and they require much less reflection code. Some type of safety can also be added; this is discussed in the chapter LittleSharp. Finally, expression trees are probably used more by the community, which means there are more sources to learn about them.
+Both approaches are comparable. They lead to constant optimized code and allow inlining with additional work. Expression Trees are easier to work with because their API is simpler and requires much less reflection code. Some type of safety can also be added; this is discussed in the chapter \ref{LittleSharp}. Finally, expression trees are probably used more by the community, which means there are more sources to learn about them.
 
-Secondly, and most importantly, we are not sure whether we can make the latter approach work. We could possibly do some hacks, maybe using a source generation or modifying Roslyn itself. Considering this, we have chosen the approach using Expression Trees. 
-\section{Peformance}
-
-ToDo 
+Secondly, and most importantly, we are unsure whether we could make the approach with struct delegates work. We could possibly do some hacks, maybe using a source generation or modifying Roslyn itself. Considering this, we have chosen the approach using Expression Trees. 
 
 \section{Future work}
-We see the library as very complete, but it could provide more hashing functions families. It could also posibly  provide a possibilty to hash from any integer type to any integer type. This would be actually very simple to implement.
-Some sort of cashing for compiled expression tree hashing function could be useful.
+We see the library as very complete, but it could provide more hash function families. It could also possibly provide a possibility to hash from any integer type to any integer type. This would be very simple to implement.
+Some sort of caching for the compiled expression tree hashing function could be useful.
+
+It would probably be interesting to investigate why exactly struct delegates approach does not work. It is possible, that some optimization is not turned off for runtime types; however, we are not sure. This was pointed to us by Mgr. Radek Zikmund.
 

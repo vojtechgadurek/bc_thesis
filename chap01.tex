@@ -1,146 +1,148 @@
-\chapter{Streaming Algorithms}
+\chapter{Set Recovery Problems}
 
 \section{Introduction to Streaming algorithms}
 
 \subsection{Motivation}
+The main idea behind streaming algorithms is that they are very similar to natural streams. After the water passes, there is no way to get it back. Similarly, streaming algorithms may view every data piece just once, never going back. They are often very limited in memory, which they can use; the maximum allowed is, at most, polylogarithmic to the size of data or to the size of the universe from which the data is taken. One may ask whether such harsh memory bounds are needed as memory is plentiful and cheap.
 
 In the early days of computing, memory was a significant hurdle. It was both limited and expensive. However, this has changed dramatically. Today, we can store vast amounts of data inexpensively. As a result, people often opt to add more storage rather than spend time deleting unnecessary files.
 
 This environment has led to a massive accumulation of data, sometimes exceeding what local machines can handle. One example might be some network router that processes large quantities of data. This is a prime example of a problem that requires the use of a streaming algorithm. The router gets some data, then performs some operations with them, and lastly, it flushes them and never sees them ever again.  This may be useful for finding heavy hitters and thus deciding which IP addresses to keep in the cache.
 
-Another challenge is limited throughput. Imagine having two distant instances of a massive database; it would be ideal for synchronizing them. However, sending all the data over the network to check if they are the same isn't always feasible due to bandwidth constraints. We would like to have an algorithm minimizing such costs. 
+Another challenge is limited throughput. Imagine having two distant instances of a massive database; it would be ideal for synchronizing them. However, sending all the data over the network to check if they are the same isn not always feasible due to bandwidth constraints. We would like to have an algorithm minimizing such costs. 
 
 At first glance, these two problems do not seem very similar. However, the opposite is true. When we have a good algorithm for processing large data in small memory, we can also use it to solve the second example. 
-May we have two databases, $S_1$ and $S_2$. We would like to perform operation $o$ on $S_1 \cup S_2$. We have access to some algorithm $A$ that can do $o$ with memory of $M$ and $A$ does not care about the order in which it consumes data, and it does not expect to see data again. Then we may first do operation $o$ on instance $S_1$, save the state of the algorithm, send it to instance $S_2$, and restart the process. We had to use at most $\O(M)$ bits of information, to ship the content of working memory to the other database.
+ Suppose we have two databases, $S_1$ and $S_2$. We want to perform operation $o$ on $S_1 \cup S_2$. We have access to some algorithm $A$ that can do $o$ with memory of $M$, and $A$ does not care about the order in which it consumes data, and it does not expect to see data again. Then we may first do operation $o$ on instance $S_1$, save the state of the algorithm, send it to instance $S_2$, and restart the process. We had to use at most $\O(M)$ bits of information to ship the content of working memory to the other database.
 
-The way an internet router accesses data may be formalized by the concept of Data Stream.
-We may imagine the Data Stream as an oracle holding internally some sequence of words, which are inputs to our program. We may ask the oracle to provide us with the next item in the sequence. This is the only way to access the input data, and there is no way back. So if we get the \(k\)-th item from the sequence, there is no way to see the \((k-i)\)-th item again for some natural \(i\). More formally:
+The way an internet router accesses data may be formalized by the concept of the data stream.
+We may imagine the data stream as an oracle holding some sequence of words internally, which are inputs to our program. We may ask the oracle to provide us with the next item in the sequence. This is the only way to access the input data, and there is no way back. So if we get the \(k\)-th item from the sequence, there is no way to see the \((k-i)\)-th item again for some natural \(i\). More formally:
 
 \begin{defn}
-Data Stream is tuple $(A, i, Access)$, where $A$ is a sequence of unknown length \(N\) of finite words from universe $U$ over finite language $L$. $i$ is counter, which may only increase in value. $Access()$ returns value of $A_i$ and increases value of counter by one.
+Data Stream is tuple $(A, i, Access)$, where $A$ is a sequence of unknown length \(N\) of finite words from universe $U$, $i$ is a counter, which may only increase in value. $Access()$ returns the value of $A_i$ and increases the value of a counter $i$ by one.
 \end{defn}
 
-This may not seem to be limiting as we might create a large array and copy elements from the Data Stream to it and then continue with normal computation as in RAM. This leads us to the second limitation, limiting memory usage.
+This may not seem to be limiting as we might create a large array and copy elements from the Data Stream to it and then continue with normal computation as in RAM. This leads us to the limitation of memory usage.
 
-We would like to be memory-bound. When designing algorithms, we will choose those with polylogarithmic space complexity over the size of the universe and the number of items in the Data Stream.
+When designing algorithms, we prefer those with polylogarithmic space complexity over the size of the universe and the number of items in the Data Stream.
 
-In computer science, Oh notation is often used to describe algorithms' time or space complexity. While this simplification is convenient and helps us to compare algorithms easily, it may lead to wrong conclusions as algorithms with worse Oh complexity may perform better in the real world than algorithms with better Oh complexity.
+In computer science, the Oh notation is often used to describe algorithms' time or space complexity. While this simplification is convenient and helps us to compare algorithms easily, it may lead to wrong conclusions as algorithms with worse Oh complexity may perform better in the real world than algorithms with better Oh complexity.
 
 One reason may be that our theoretical model of computation RAM (Random Access Machine) hides some constants from us. 
-If our only need is to find asymptotic complexity, then hiding constants is not an issue, but in the real world, these hidden costs may cause significant performance problems. For example, random access to memory is much more expensive, than serial read.
+If our only need is to find asymptotic complexity, then hiding constants is not an issue, but in the real world, these hidden costs may cause significant performance problems. For example, random access to memory is much more expensive than sequential read.
 
-Consequently, algorithms with the same time complexity can differ significantly in performance, sometimes by orders of magnitude. For example, IBLT (Invertible Bloom Lookup table) outperforms the naive algorithm for finding the symmetric difference of two large sets by using memory linear to the size of the symmetric difference. In contrast, the naive algorithm requires linear memory to the size of both sets combined.
+Consequently, algorithms with the same time complexity can differ significantly in performance, sometimes by orders of magnitude. For example, IBLT (Invertible Bloom Lookup table) outperforms the naive algorithm using hash table for finding the symmetric difference of two large sets by using memory linear to the size of the symmetric difference. In contrast, the naive algorithm requires linear memory to the size of both sets combined.
 
-As such, we would like to have a model that is stricter about memory and how we can use it. The main intuition should be, that we can see every piece of data just once and never again.
 
-\subsection{Data Stream model}
-
-We may imagine the Data Stream as an oracle holding internally some sequence of words, which are inputs to our program. We may ask the oracle to provide us with the next item in the sequence. This is the only way to access the input data, and there is no way back. So if we get the \(k\)-th item from the sequence, there is no way to see the \((k-i)\)-th item again for some natural \(i\). More formally:
-
-\subsection{Use cases for Streaming Algorithms}
+\subsection{Use Cases for Streaming Algorithms}
 
 At first glance, it is unclear how strong Streaming Algorithms are and for what purposes they may be used. In this section, we give some examples of such problems and Streaming Algorithms that solve them: 
 
 \subsubsection{Counting}
 As humans, we are often used to count on our fingers. The basic strategy of raising one finger for every increase leads to the highest count of 10. This may be significantly improved by using fingers as bits and counting in binary. We can get at most $2^{10} - 1$. Is there any upper bound on the maximum?
 One should see that for describing $2^{10}$ states, we need at least $10$ bits.
-If we decided to count only even numbers, we could go higher. This has one little problem, it is not clear how to add one to our count. The solution is to abandon the deterministic algorithm and go for a probabilistic one.  We will use $s$ for the true sum and $s'$ for the sum returned algorithm. 
+If we decided to count only even numbers, we could go higher. This has one little problem: it is not clear how to add one to our count. The solution is to abandon the deterministic algorithm and go for a probabilistic one.  We will use $s$ for the true sum and $s'$ for the sum by the returned algorithm. 
 
-\begin{lstlisting}
-Update c : N -> N
-    let s = uniform pick from [0,1]
-    s > 0.5 return c + 1
-    s <= 0.5 return c
-\end{lstlisting}
+\begin{algorithm}
+\caption{Update $c : \mathbb{N} \to \mathbb{N}$}
+\label{Update}
+\begin{algorithmic}[1]
+\Procedure{Update}{$c$}
+    \State Let $s$ be a uniform pick from $[0,1]$
+    \If{$s > 0.5$}
+        \State \Return $c + 1$
+    \Else
+        \State \Return $c$
+    \EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
 
-\begin{lstlisting}
-Query s : N -> N
-    return s * 2
-\end{lstlisting}
-We can use \textit{Update} when we want to increase the count by one. It is not hard to see that the expected value is the same as the true value. More specifically, $s'$ is going to have a binomial distribution. Conversely, it is unclear how close the algorithm returns sums $s$. We will accept all $s'$ in $U(s, \epsilon s)$ as successes. We will use a Chebychev inequality to set bounds on probability. We have to know the variance of random variables to use this inequality. Luckily, it is common knowledge, that binomial distribution has a variance with value $np(p-1)$.
-Now we just input the value to the Chebychev inequality:
+\begin{algorithm}
+\caption{Query $s : \mathbb{N} \to \mathbb{N}$}
+\begin{algorithmic}[1]
+\Function{Query}{$s$}
+    \State \Return $2 \dot s$
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+We can use \textit{Update} Algorithm \ref{Update} to increase the count by one. It is not hard to see that the expected value is the same as the true value. More specifically, $s'$ is going to have a binomial distribution. Conversely, it is unclear how close the algorithm estimates are to the sum $s$. We accept all $s'$ in $[s - \epsilon s, s + \epsilon s]$ as successes. We will use the Chebychev inequality to set bounds on probability. We have to know the variance of random variables to use this inequality. Luckily, it is common knowledge that binomial distribution has a variance with value $np(p-1)$.
+Now we just input the value to the Chebychev inequality for $p = \frac{1}{2}$:
 $$
 Pr[|s' - s| > \epsilon s]= Pr[|X-pn| > \epsilon np] \leq \frac{np(p-1)}{(\epsilon np)^2} = \frac{(1-p)}{p\epsilon^2n}
 $$
-So, we can see that the probability of failure decreases as $\delta$ or $n$ gets larger. The latter is important as it implies that the algorithm succeeds with high probability. When we set parameters $\delta$ and $n$, so the probability of failure is less than $\frac{1}{2}$, we may use a median trick to get a failure rate of $\delta$, by running $\O(\log(\frac{1}{\delta})$ instances of the algorithm. 
+So, we can see that the probability of failure decreases as $\delta$ or $n$ gets larger. The latter is important as it implies that the algorithm succeeds with high probability. When we set parameters $\delta$ and $n$, so the probability of failure is less than $\frac{1}{2}$, we may use the median trick to get a failure rate of $\delta$, by running $\O(\log(\frac{1}{\delta})$ instances of the algorithm. 
 
-This algorithm may be usable, but it allows us to double a range; we can count on this being probably not worthwhile. Getting the same result would cost us only one bit of memory. So, running multiple instances of this algorithm would essentially be worthless. Also, we are losing accuracy and determinacy, which are great costs. 
+This algorithm may be usable, but it allows us to double a range; we can count on this being probably not worthwhile. Getting the same result would cost us only one bit of memory. So, running multiple instances of this algorithm would essentially be worthless. Also, we are losing accuracy and determinism, which are great costs. 
 
- 
+\subsubsection{Morris Counter}
 
-\subsubsection{Moris Counter}
+We modify this algorithm to multiply the value exponentially. We change the meaning of increasing the counter by one from "add two" to "multiply by two." We also change the probability of increasing the counter appropriately.
 
-We may modify this algorithm to multiply the value exponentially. We change the meaning of increasing the counter by one from "add two" to "multiply by two." We also change the probability of increasing the counter appropriately.
+The algorithm we get is called the Moris Counter. It is regarded as the first true Streaming Algorithm ever discovered. \cite{10.1145/359619.359627} It needs just $\O(\log(\log(n))$ memory, where $n$ is the highest number counted to.
 
-The algorithm we get is called a Moris Counter. It is regarded as the first true Streaming Algorithm ever discovered.
+\begin{algorithm}
+\caption{Update $c : \mathbb{N} \to \mathbb{N}$}
+\begin{algorithmic}[1]
+\State Let $s$ be a uniform pick from $[0,1]$
+\If{$s > 2^{-c}$}
+    \State \Return $c + 1$
+\Else
+    \State \Return $c$
+\EndIf
+\end{algorithmic}
+\end{algorithm}
 
-\begin{lstlisting}
-Update c : N -> N
-    let s = uniform pick from [0,1]
-    s > 2 to power of -c return c + 1
-    s <= 2 to power of -c return c
-\end{lstlisting}
+\begin{algorithm}
+\caption{Query $s : \mathbb{N} \to \mathbb{N}$}
+\begin{algorithmic}[1]
+\State \Return $2^s$
+\end{algorithmic}
+\end{algorithm}
 
-\begin{lstlisting}
-Query s : N -> N
-    return 2 to power of s
-\end{lstlisting}
-
-Again, we say $s$ is the real sum and $s'$ sum returned by our algorithm. It does not take a lot of work to prove that: $E[s'] = s$ and that $\frac{n^2}{4}$. We are going to skip it. However, interested readers may find proof here [Small Summaries for Big Data].
-
-Again, we could use Chebichev inequality to get bound on the probability of success. 
-$$
-Pr[|s' - s| > \epsilon s]= Pr[|X-pn| > \epsilon np] \leq \frac{n^2}{4}{(\epsilon np)^2} = \frac{1}{\epsilon^2}
-$$
-
-There one should see, that for $\epsilon < \sqrt{\frac{1}{2}}$, we may no longer use Median Tric. This has one simple solution, we may lower the probability of a counter increase. This means the Moris counter gets finer but at the cost of higher memory usage.
-
-\subsection{Number of distinct elements in MultiSet}
-We are going to move to a different problem. Imagine having a very large multiset where some elements may be multiple times, which is given to us as a Data Stream. Our goal is to find the number of different elements. In this subsection, we will not show just a sketch of the proof. We will omit some details.
+\subsection{Number of Distinct Elements in MultiSet}
+We are going to move to a different problem. Imagine having a very large multiset where some elements may be multiple times, which is given to us as a Data Stream. Our goal is to find the number of different elements. In this subsection, we will show just a sketch.
 
 We start by cheating. We assign each element a random number from some uniform distribution so that the same elements have the same number. We clearly do not have space for that, but we will solve this issue later. 
 
-Now, we find $k$ different random numbers associated with some element (we expect the numbers to be linearly ordered). We are going to call this value $v$. Let $n$ be the true number of distinct elements in the set, and $R$ be the size of the universe from which we pick random numbers. Let $v$ be the largest of the smallest numbers, 
-then our prediction $n' :=  \frac{R(k-1)}{v_0} $ 
+Now, we find $k$ different smallest random numbers associated with some elements from the elements (we expect the numbers to be linearly ordered). We are going to call this value $v$. Let $n$ be the true number of distinct elements in the set, and $R$ be the size of the universe from which we pick random numbers. Let $v$ be the largest of the smallest numbers, 
+then our estimate is $n' :=  \frac{R(k-1)}{v_0} $ 
 
-The hash function may be used to assign random numbers, and we can keep the $k$-smallest hashes in memory. Now, we should check how good our approximation is. We may see that some distinct values may have the same hashes. This is easily overcome, but we are not going to, and we just pretend all values have different hashes. We would also pretend that the hashes are independent of each other. (These are clearly contradictory, but again, we are not going to care). 
+We show this algorithm mainly as a showcase for using a hash function as a random number generator. Any hash function may be used as a random number generator. However, we should not forget that the randomness gained this way may not have the best properties. For example by using $3$-independant hash function, we may get very close to $3$-independant random variables. We mention just close, as  $3$-independant for hash function is defined only asymptoticaly. 
 
-We have two possible errors, one $n'$ being too large. We first look at $n'$ being too large. By too large, we mean that $n' > (1 + \epsilon) n$. This means at least $k$ values had their hash with value lover than some threshold $T = T(\epsilon, n, R)$. We should see that increasing $k$ decreases the probability of such an event happening. 
+The hash function may be used to assign random numbers, and we can keep the $k$-smallest hashes in memory. Now, we should check how good our approximation is. We may see that some distinct values may have the same hashes. This can be easily overcome, but we are not going to, and we just assume that all values have different hashes. We would also assume that the hashes are independent of each other. (These are clearly contradictory, but again, we are not going to care). 
 
-The second is that the value is too low, so this means all hashes of values fall under threshold $F=F(\epsilon, n, R)$. Whether a hash is under or above some threshold is just a random variable of Bernolli distribution, and all the hashes are "independent" as we know the variance, and we may call a Chebychev inequality.
+It remains to prove that our approximation is good enough. This is not hard, however we omit the proof. We just remark, that Chebychev Inequality is again used.
 
-Here we end our sketch of proof. This algorithm may improved, which leads to HyperLogLog, which is actually used.
+The algorithm described is called KVM ($k$-minimum values) and was introduced by Bar-Yossef at al. \cite{bar2002counting}.
+This algorithm can be improved, which leads to HyperLogLog being the algorithm used in industry.  \cite{flajolet2007hyperloglog}
 
-
+We refer interested readers to Small Summaries for Big Data \cite{cormode2020small} for finding proofs or more streaming algorithms.
 
 \section{Statement of the Problem}
 
 We will return to the example from the introduction. Imagine we have two instances of one database, and we would like to find if they differ, and if they do, then make corrections so they become the same. Also, we would like to exchange as little data between the instances as possible.
 
-We can model this problem by having two large sets \(A\), \(B\) such that their symmetric difference is slight (the symmetric difference of \(A\), \(B\) contains elements that are just in one of the sets). The elements of \(A\) and \(B\) are given to us as a Data Stream, first we get elements from \(A\), then from \(B\).
+We can model this problem by having two large sets \(A\), \(B\) such that their symmetric difference is small (the symmetric difference of \(A\), \(B\) contains elements that are just in one of the sets). The elements of \(A\) and \(B\) are given to us as a Data Stream, first we get elements from \(A\), then from \(B\).
 
 \begin{defn}
     \(k\)-SetRecoveryProblem of sets \(A\) and \(B\) is the problem of finding the symmetric difference of \(A\), \(B\) of size at most \(k\), where elements of \(A\) and \(B\) are provided to us using a data stream, first giving elements of \(A\), then sending a dividing symbol, and then sending all elements of \(B\). If not said otherwise, we would use \(N\) for the number of elements in both sets and \(M\) for the universe size from which items of the Data Stream are taken.
 \end{defn}
 
-We would expect that elements of both sets have some unique binary representation. If we talk about some arithmetic operations over these elements, we are actually doing these operations over their binary representations.
+We will expect that elements of both sets have some unique binary representation. If we talk about some arithmetic operations over these elements, we are actually doing these operations over their binary representations.
 
 One may imagine that sets contain just integers that are then mapped to the actual elements.
 
-We can solve any \(k\)-Problem in \(\O(n)\) space and time, where \(n\) is the number of elements in the Data Stream. We will build a HashSet, adding all elements from \(A\) and then removing all elements from \(B\). This solves our problem, but our space complexity is much larger than \(\LogDSpace\). Actually, the best-known algorithm has \(\O(k)\) complexity, where \(k\) is the size of the symmetric difference.
+We can solve any \(k\)-SetRecoveryProblem in \(\O(n)\) space and time, where \(n\) is the number of elements in the Data Stream. We build a HashSet, adding all elements from \(A\) and then removing all elements from \(B\). This solves our problem, but our space complexity is linear to the size of both sets. The best-known algorithm has \(\O(k)\) space complexity, where \(k\) is the size of the symmetric difference.
 
 \section{From Simple solutions to IBLT's}
 
-It's not easy to see how to proceed to get an algorithm better than the naive version. In this chapter, we will try to build Invertible Bloom Lookup Tables that solve the problem of the aforementioned space complexity. The first question should be how?
+It is not easy to see how to proceed to get an algorithm better than the naive version. In this chapter, we will try to build Invertible Bloom Lookup Tables that solve the problem of the aforementioned space complexity. 
 
-\subsection{Solving 1-Problem}
+\subsection{Solving \(1\)-SetRecoveryProblem}
 
-Let's start by simplifying the problem. We would limit the size of the symmetric difference to size 1.
+Let us  start by simplifying the problem. We would limit the size of the symmetric difference to size 1.
 
-\begin{lemma}
-\(1\)-The problem of two sets \(A\), \(B\) is solvable by a Streaming Algorithm, and we will call this algorithm.
-\end{lemma}
-
+The solution is not hard.
 The construction is quite simple; we will remember two numbers \(C\) and \(S\):
 
 \[ C := |A| - |B| \]
@@ -152,129 +154,193 @@ If \(C\) is \(1\), then the symmetric difference is \(\{S\}\). If \(C\) is \(-1\
 
 It should be clear that \(C\) may be just \(-1\), \(0\), or \(1\).
 
-This algorithm may not be the best in terms of memory efficiency, as with \(S\), \(C\) may consume \(\O(\log(N) + \log(M))\) memory, but this may be improved to \(\O(\log(M))\). We leave this as an exercise to the reader. Hint: Can \(C\) be from a finite field?
+This algorithm may not be the best in terms of memory efficiency, as with \(S\), \(C\) may consume \(\O(\log(N) + \log(M))\) memory, but this may be improved to \(\O(\log(M))\). 
 
 We are going to reuse this algorithm in the next section; thus, it would be nice to give it a name.
 
-\begin{defn}
-    SumOneFinder is a Streaming Algorithm solving \(1\)-Problem using sum and counter. 
-\end{defn}
 
-\subsection{From 1 to k-SetRecoveryProblem Solution}
+\subsection{From 1 to $k$-SetRecoveryProblem Solution}
+We now use SumOneFinder to find a solution to the $2$-SetRecoveryProblem. The sets may differ by up to two elements. For simplicity, we assume that they differ by exactly two elements, $a$ and $b$, and that $A \subset B$.
 
-We now can use SumOneFinder to find a solution to $2$-SetRecoveryProblem. The sets may differ in up to two elements. For simplicity, we assume that they differ in exactly two elements $a$ and $b$ and $A \subset B$.
-Firstly, we take some hash function $f: A\cup B \rightarrow \{0,1\}$. We can use it to divide all elements into two buckets. If we were lucky, we got $a$ and $b$ in different buckets, then we need to solve just two 1-SetRecoveryProblems. If we were not lucky, the two elements would have been hashed into the same bucket, and we would have no way to recover them. We only know that there are two elements in such buckets as we keep a count. Sadly, the probability of failure is $\frac{1}{2}$, so we cannot use a median trick; however, if we divide the elements into more parts, the probability of $a$ and $b$ increases.
+First, we use a hash function $f: A \cup B \rightarrow {0,1}$ to divide all elements into two buckets. If we are lucky and $a$ and $b$ end up in different buckets, we only need to solve two 1-Set Recovery Problems. However, if $a$ and $b$ are hashed into the same bucket, recovery becomes impossible. We only know that there are two elements in such buckets because we keep a count. Unfortunately, the probability of failure is $\frac{1}{2}$, which means we cannot use a median trick. However, by dividing the elements into more parts, we increase the probability that $a$ and $b$ will be in different parts.
 
-We can generalize to get a general solution to $k$-SetRecoveryProblem. For every $k$ we just need to find some $l$ of number parts. Such as the probability of every element holding exactly one element is more than $ \frac{1}{2}$. 
-When we have $k$ elements and $l$ parts, the probability of no two elements hashing to the same part is:
+We can generalize this approach to solve the $k$-SetRecoveryProblem. For any $k$, we need to find an appropriate number $l$ of parts so that the probability of each element being in a different part is greater than $\frac{1}{2}$.
 
-We can see that our problem is equivalent to the Birthday problem. It is known that large $k$ $l$ needs to be in $\O(k^2)$. [https://www.physics.harvard.edu/files/sol46.pdf] This means we got a solution to our problem in $\O(log(\frac{1}{\delta}) k^2)$ with a probability of success of $\frac{1}{\delta}$.
-We remind you that the logarithm is gained from using a Median trick.
-We are going to call this algorithm without using Median tric as KSumOneFinder.
+When we have $k$ elements and $l$ parts, the probability that no two elements hash to the same part is:
 
-This solution has two problems: it is quadratic space complex compared to the size of the symmetric difference, and it has a nonzero probability of failure. 
+We see that our problem is equivalent to the Birthday Paradox. It is known that for large $k$, $l$ needs to be in $\O(k^2)$. This gives us a solution to our problem in $\O(\log(\frac{1}{\delta}) k^2)$ with a success probability of $1 -\delta$. Note that the logarithm arises from using a median trick. We call this algorithm, without using the median trick, KSumOneFinder.
 
-The main idea is that when we run multiple instances of KSumOneFinder, we may use the results from each to improve the others. Let's say we have two instances of KSumOneFinder $G_1$ and $G_2$, and both algorithms fail to recover $k$ elements, but they recover two sets of elements $K_1$ and $K_2$. We then may take $K_1$ and remove all these elements from $G_2$. If we were lucky, some unrecovered elements in $G_2$ lay in the same buckets as those in $K_2$, and then we can recover those. When we recover all elements or none, we may end; if not, then we may use elements in $K_2$ to recover more elements from $G_1$.
+This solution has two drawbacks: it uses quadratic space relative to the size of the symmetric difference, and there is a nonzero probability of failure.
 
-\begin{lstlisting}
-SymDifference A B : (A,B) -> C
-    G1 <- Encode A B
-    G2 <- Encode A B
-    K1 <- Recover G1
-    K2 <- Recover G2
-    let Recovered = K1 union K2
-    while true:
-        G1 <- Recover (G1 - Recovered) union Recovered
-        G2 <- Recover (G2 - Recovered) union Recovered
-        if no element was newly recovered return recovered
-\end{lstlisting}
+The main idea is that by running multiple instances of KSumOneFinder, we can use the results from each instance to improve the others. Suppose we have two instances of KSumOneFinder, $G_1$ and $G_2$, and both fail to recover $k$ elements but recover two sets of elements, $K_1$ and $K_2$. We can then take $K_1$ and remove these elements from $G_2$. If we are fortunate, some unrecovered elements in $G_2$ will be in the same buckets as those in $K_2$, allowing us to recover them. If we recover all elements or none, we stop; otherwise, we use elements in $K_2$ to recover more elements from $G_1$.
 
-Before we analyze this algorithm, we first show some intuition. To recover an element we need to pair it with some bucket. Every element lies in $m$ buckets, where $m$ is the number of instances run. As such, we may look at buckets as vertices and elements as edges in some $m$-uniform hypergraphs. We are not able to recover some elements if some $2$-core exists. We made a little change to our algorithm; we let our instances of KSumOneFinder share one single set of buckets.
+\begin{algorithm}
+\caption{SymDifference $A, B : (A, B) \to C$}
+\begin{algorithmic}[1]
+\State $G1 \gets \text{Encode}(A, B)$
+\State $G2 \gets \text{Encode}(A, B)$
+\State $K1 \gets \text{Recover}(G1)$
+\State $K2 \gets \text{Recover}(G2)$
+\State Let $Recovered \gets K1 \cup K2$
+\While{true}
+    \State $G1 \gets \text{Recover}((G1 - \text{Recovered}) \cup \text{Recovered})$
+    \State $G2 \gets \text{Recover}((G2 - \text{Recovered}) \cup \text{Recovered})$
+    \If{no element was newly recovered}
+        \State \Return $Recovered$
+    \EndIf
+\EndWhile
+\end{algorithmic}
+\end{algorithm}
 
-Here, we may call a theorem from preliminaries about the threshold for the appearance of $2$-core in $3$-uniform hypergraph. As such, we get a high probability that we can recover all elements from the symmetric difference of the two sets $A$ and $B$ if the number of buckets to the size of the symmetric difference is approximately at least $1.222\dots$. This is the best we can get for any $k$-uniform hypergraph. We do not need to limit ourselves to uniform hypergraphs, as better bounds were found for non-uniform ones. Michael Rink's experimental result shows [https://arxiv.org/pdf/1204.2131] that by using edges of size $(3, 21)$, it is possible to get a bound of $1.086$.
-It should be noted, that the best possible result is using this method $1$ as every element needs to paired with some bucket.
+Before we analyze this algorithm, we first show some intuition. To recover an element we need to match it with some bucket. Every element lies in $m$ buckets, where $m$ is the number of instances run. As such, we may look at buckets as vertices and elements as edges in some $m$-uniform hypergraphs. We are not able to recover some elements if some $2$-core exists. We made a little change to our algorithm; we let our instances of KSumOneFinder share one single set of buckets.
 
-\subsection{Invertible Bloom Lookup Table}
-The algorithm is equivalent to a known data structure called an IBLT (Invertible Bloom Lookup Table). This algorithm is described here[https://arxiv.org/pdf/1101.2245]. This structure may also work as a dictionary, supporting recovery key-value pairs. There is no use case for this for us; we will describe only a simplified version. We describe the structure now. Let $U$ be the universe of possible keys. Keys must be a binary representation; we will work just with it and finally be $B$, the sets of buckets. We start by picking a set of random hash functions $U \rightarrow B$ named $H$ and some helper hash function $D$.
+Here, we may call a theorem from preliminaries \ref{mol} about the threshold for the appearance of $2$-core in $3$-uniform hypergraph. As such, we get a high probability that we can recover all elements from the symmetric difference of the two sets $A$ and $B$ if the number of buckets to the size of the symmetric difference is approximately at least $1.222\dots$. This is the best we can get for any $k$-uniform hypergraph. We do not need to limit ourselves to uniform hypergraphs, as better bounds were found for non-uniform ones. 
+
+\subsection{Invertible Bloom Lookup Table} \label{iblt}
+The algorithm is equivalent to a known data structure called IBLT (Invertible Bloom Lookup Table). This algorithm is described in \cite{6120248}. This structure may also work as a dictionary, supporting recovery of key-value pairs. There is no use case for this for us; we will describe only a simplified version. Let $U$ be the universe of possible keys. Keys must be a binary representation; we will work just with it and finally be $B$, the sets of buckets. We start by picking a set of random hash functions $U \rightarrow B$ named $H$ and some helper hash function $D$.
 
 The buckets are very similar to SumOneFinder:
-\begin{lstlisting}
-type Bucket:
-    SumOfKeys
-    SumOfHashes
-    Count
-\end{lstlisting}
+\begin{algorithm}
+\caption{Definition of \texttt{Bucket}}
+\begin{algorithmic}[1]
+\State \textbf{type} Bucket:
+    \State \hspace{\algorithmicindent} SumOfKeys
+    \State \hspace{\algorithmicindent} SumOfHashes
+    \State \hspace{\algorithmicindent} Count
+\end{algorithmic}
+\end{algorithm}
 This is practically the same as the fields of SumOneFinder, but we added a new field called SumOfHashes. This field will be important for allowing the removal of keys not present in the Sketch.
 
 Now, we describe three possible operations that are done with the IBLT data structure.
-\begin{lstlisting}
-Add Key : (Value) -> void
-    for every hash function h in H:
-        bucket <- (h Key)
-        bucket.SumOfKeys +<- Key
-        bucket.SumOfHashes +<- D Key
-        bucker.Count +<- 1
-    
-Remove Key : (Value) -> void
-    for every hash function h in H:
-        bucket <- (h Key)
-        bucket.SumOfKeys -<- Key
-        bucket.SumOfHashes -<- D Key
-        bucker.Count -<- 1
+\begin{algorithm}
+\caption{Add Key : (Value) $\to$ void}
+\begin{algorithmic}[1]
+\Procedure{Add Key}{$\text{Value}$}
+    \For{every hash function $h$ in $H$}
+        \State $bucket \gets (h(\text{Key}))$
+        \State $bucket.\text{SumOfKeys} \mathrel{+}= \text{Key}$
+        \State $bucket.\text{SumOfHashes} \mathrel{+}= D(\text{Key})$
+        \State $bucket.\text{Count} \mathrel{+}= 1$
+    \EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
 
-IsPure bucket: Bucket -> bool
-    if bucket.Count is not  1 or -1 return false
-    if bucket.SumOfHashes * bucket.Count is not equal to
-        (D bucket.SumOfValues * bucket.Count) return  false
-    return true
-Recovery: -> Values
-    until there is some bucket, that is pure:
-        if bucket.Count = 1 Remove bucket.SumOfKeys
-        if bucket.Count = -1 Add bucket.SumOfKeys
-    if some bucket contains non zero value recovery failed
-\end{lstlisting}
+\begin{algorithm}
+\caption{Remove Key : (Value) $\to$ void}
+\begin{algorithmic}[1]
+\Procedure{Remove Key}{$\text{Value}$}
+    \For{every hash function $h$ in $H$}
+        \State $bucket \gets (h(\text{Key}))$
+        \State $bucket.\text{SumOfKeys} \mathrel{-}= \text{Key}$
+        \State $bucket.\text{SumOfHashes} \mathrel{-}= D(\text{Key})$
+        \State $bucket.\text{Count} \mathrel{-}= 1$
+    \EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
 
-Why do we have the SumOfHashes? The problem is that the count does not need to correspond to the actual number of elements hashed to such a bucket. It may be significantly lower, but without the helper hashing function $D$, we would not know, and we could recover items that are not present in the symmetric difference. By using the SumOfHashes, we lower the probability of such an event happening by size the size of the universe $D$ is hashing to.
+\begin{algorithm}
+\caption{IsPure bucket : Bucket $\to$ bool}
+\begin{algorithmic}[1]
+\Function{IsPure}{$\text{bucket}$}
+    \If{$\text{bucket.Count} \neq 1 \text{ and } \text{bucket.Count} \neq -1$}
+        \State \Return \textbf{false}
+    \EndIf
+    \If{$\text{bucket.SumOfHashes} \times \text{bucket.Count} \neq D(\text{bucket.SumOfValues}) \times \text{bucket.Count}$}
+        \State \Return \textbf{false}
+    \EndIf
+    \State \Return \textbf{true}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
 
-\section{HPW algorithm}
+\begin{algorithm}
+\caption{Recovery : $\to$ Values}
+\begin{algorithmic}[1]
+\Procedure{Recovery}{}
+    \Repeat
+        \For{every bucket}
+            \If{\Call{IsPure}{bucket}}
+                \If{$\text{bucket.Count} = 1$}
+                    \State \Call{Remove}{$\text{bucket.SumOfKeys}$}
+                \ElsIf{$\text{bucket.Count} = -1$}
+                    \State \Call{Add}{$\text{bucket.SumOfKeys}$}
+                \EndIf
+            \EndIf
+        \EndFor
+    \Until{some bucket contains non-zero value}
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+The SumOfHashes is used to address a specific problem in hashing where the count of items hashed to a bucket may not accurately reflect the actual number of elements present. Without an additional hashing function, \( D \), there's a risk of mistakenly recovering elements that are not part of the symmetric difference. The SumOfHashes helps mitigate this issue by reducing the likelihood of such errors. This reduction in probability is proportional to the size of the universe that \( D \) hashes into, providing a more reliable method for identifying the correct elements in the symmetric difference.
+
+\section{HPW Algorithm} \label{hwp}
 IBLT needs $1.222\dots$ buckets with three main hash functions and one helper function. We are not going to improve that. However, the size of the bucket can be improved. If we take an IBLT bucket, we see that it has three fields. In a trivial implementation using, for example, a 32-bit integer for them, we would actually need three times the memory. This may be improved as Count and SumOfHashes may have smaller sizes. We will not dive deep into these methods as they are out of scope. There is actually an algorithm needing just one field per bucket. This algorithm was discovered by Jakob Bæk Tejs Houen,
 Rasmus Pagh, 
-Stefan Walzer. [https://arxiv.org/pdf/2211.03683] As the authors did not name their algorithm for the purpose of this text, we are going to use the abbreviation HPW. 
+Stefan Walzer. \cite{doi:10.1137/1.9781611977585.ch21} As the authors did not name their algorithm for the purpose of this text, we are going to use the abbreviation HPW. 
 
-The main idea is simple: instead of the sum of values and counts, we will use the xor of values hashed to the bucket. The interesting property of xor is that it is computative, and $ aoplus a = 0$. This means that if some element $a$ is added to both sets $A$ and $B$, the corresponding Sketch will stay the same.
+The main idea is simple: instead of the sum of values and counts, we will use the xor of values hashed to the bucket. The interesting property of xor is that it is commutative, and $ a\oplus a = 0$. This means that if some element $a$ belongs to both sets $A$ and $B$, the corresponding Sketch will stay the same.
 
-\begin{lstlisting}
-type Bucket:
-    Value
+\begin{algorithm}
+\caption{Toggle Value : (Value) $\to$ void}
+\begin{algorithmic}[1]
+\Procedure{Toggle Value}{$\text{Value}$}
+    \For{every hash function $h$ in $H$}
+        \State $bucket \gets (h(\text{Key}))$
+        \State $bucket.\text{Value} \mathrel{\oplus}= \text{Key}$
+    \EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
 
-Toggle Value : (Value) -> void
-    for every hash function h in H:
-        bucket <- (h Key)
-        bucket.Value xor<- Key
+\begin{algorithm}
+\caption{LooksPure bucket : Bucket $\to$ bool}
+\begin{algorithmic}[1]
+\Function{LooksPure}{$\text{bucket}$}
+    \State $\text{value} \gets \text{bucket.Value}$
+    \If{$\text{value} = \text{null}$}
+        \State \Return \textbf{false}
+    \EndIf
+    \For{every hash function $h$ in $H$}
+        \If{$(h(\text{value})) = \text{bucket}$}
+            \State \Return \textbf{true}
+        \EndIf
+    \EndFor
+    \State \Return \textbf{false}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
 
-LooksPure bucket: Bucket -> bool
-    value <- bucket.Value
-    if key = null return false
-    for hash function h in H:
-        if (h value) = bucket return true
-    return false
-    
-Recovery: -> Values
-    pure <- { b in B; LooksPure(b)}
-    recovered <- {}
-    while true:
-        pureNext <-{}
-        for b in pure if LooksPure:
-            if recovered.Contains(b.Value) remove b from recovered
-            else remove add else to recovered
-            Toggle b.Value
-            for h in H:
-                add (h b.Value) pureNext
-            pure <- pureNext
-            pureNext <-  {}
-        if pure = {} return success if all bucket.Value are null
-\end{lstlisting}
-We will not explain why the algorithm works in depth, but we will try to give some insight into how it might work. We start by imagining a sunshine world, where LookPure returns true only, when a value in the bucket corresponds to some element of symmetric difference. In this world, when our algorithm succeeds it returns all the elements in symmetric difference and not one more. Sadly, not all dreams may be fulfilled, and we must face the problem of LooksPure not returning a correct answer.
-It may happen that some xor $x$ of some set of values $K$ that hashes to one same bucket looks pure. If this happened during recovery, then the value $x$ would be recovered values despite not being an element of symmetric difference. This does not mean that it stays there; it can be removed and probably will as the value was toggled back to the sketch. We are going to call such keys outside keys. 
+\begin{algorithm}
+\caption{Recovery : $\to$ Values}
+\begin{algorithmic}[1]
+\Procedure{Recovery}{}
+    \State $pure \gets \{ b \in B \mid \text{LooksPure}(b) \}$
+    \State $recovered \gets \{\}$
+    \While{true}
+        \State $pureNext \gets \{\}$
+        \For{each $b \in \text{pure}$}
+            \If{$\text{recovered.Contains}(b.\text{Value})$}
+                \State remove $b$ from $recovered$
+            \Else
+                \State add $b.\text{Value}$ to $recovered$
+                \State \Call{Toggle Value}{$b.\text{Value}$}
+                \For{every hash function $h$ in $H$}
+                    \State add $(h(b.\text{Value}))$ to $pureNext$
+                \EndFor
+            \EndIf
+        \EndFor
+        \State $pure \gets pureNext$
+        \If{$pure = \{\}$}
+            \State \Return success if all bucket.Values are null
+        \EndIf
+    \EndWhile
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+We will not explain why the algorithm works in depth, but we will try to give some insight into it. We start by imagining an idealized world, where LookPure returns true only when a value in the bucket corresponds to some element of the symmetric difference. In this world, when our algorithm succeeds, it returns all the elements in the symmetric difference and not one more. Sadly, not all dreams may be fulfilled, and we must face the problem of LooksPure not returning a correct answer.
+It may happen that the xor $x$ of some set of values $K$ that hashes to one bucket looks pure. If this happened during recovery, then the value $x$ would be recovered despite not being an element of the symmetric difference. This does not mean it stays there; it can be removed and probably will as the value was toggled back to the sketch. We are going to call such keys outside keys. 
 What may also happen is that some set of outside keys cancel themselves out, and then we have no chance of removing them.
-It is possible to show that these issues are unlikely to cause problems. As such, this HPW returns a high-probability right answer if the number of buckets is large enough.
+It is possible to show that these issues are unlikely happen. As such, this HPW returns with high-probability the right answer if the number of buckets is large enough.
